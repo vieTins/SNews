@@ -1,1 +1,1 @@
-"# SNews"  
+SNews Project 
