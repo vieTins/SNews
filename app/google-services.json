@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "21680126462",
+    "project_id": "sscansscan",
+    "storage_bucket": "sscansscan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21680126462:android:e5e6977ac51b3d8fe0e8af",
+        "android_client_info": {
+          "package_name": "com.example.securescan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDER8Rx9rm7MEWIw6PLBbWOu6MYdcbiMoE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
