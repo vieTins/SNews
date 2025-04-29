@@ -41,7 +41,7 @@ import com.example.securescan.viewmodel.NewsViewModel
 
 
 @Composable
-fun NewsScreen(onNavigateToNewsDetail: (Int) -> Unit = {}) {
+fun NewsScreen(onNavigateToNewsDetail: (String) -> Unit = {}) {
     val viewModel: NewsViewModel = viewModel()
     val newsList by viewModel.allNews.collectAsState(initial = emptyList())
 
@@ -273,7 +273,7 @@ fun NewsTopAppBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (Int) -> Unit) {
+fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
     val filteredFeaturedNews = featuredNews.filter { it.isFeatured }
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
@@ -433,7 +433,7 @@ fun NewsListHeader(title: String) {
 }
 
 @Composable
-fun NewsCard(newsItem: NewsItem, onNewsClick: (Int) -> Unit) {
+fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()

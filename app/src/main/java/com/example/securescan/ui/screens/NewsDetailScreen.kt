@@ -30,23 +30,49 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.securescan.R
 import com.example.securescan.viewmodel.NewsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsDetailScreen(
-    newsId: Int,
+    newsId: String,
     viewModel: NewsViewModel,
-    onBackPressed: () -> Unit = {}
+    onBackPressed: () -> Unit = {},
+    navController: NavController,
 ) {
     val newsItem by viewModel.getNewsById(newsId).collectAsState(initial = null)
+    val userLikes by viewModel.userLikes.collectAsState()
+    val isLiked = userLikes[newsId] ?: false
+    var commentText by remember { mutableStateOf("") }
+    val comments by viewModel.currentComments.collectAsState()
+
+    Log.d("NewsDetailScreen", "News item: $newsItem + id  = $newsId")
+
     if (newsItem == null) {
+        Log.d("NewsDetailScreen", "News item is null, showing loading")
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
+    }
+
+    LaunchedEffect(newsId) {
+        Log.d("NewsDetailScreen", "Loading comments and checking like status for post $newsId")
+        viewModel.loadComments(newsId)
+        viewModel.checkUserLikedPost(newsId)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.getNewsById(newsId).collect { updatedNews ->
+            if (updatedNews != null) {
+                // Cập nhật UI khi có thay đổi
+            }
+        }
     }
 
     LazyColumn(
@@ -227,19 +253,22 @@ fun NewsDetailScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clickable { /* Handle like */ }
+                                    .clickable {
+                                        Log.d("NewsDetailScreen", "Like button clicked for post $newsId")
+                                        viewModel.toggleLike(newsId)
+                                    }
                                     .padding(8.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.ThumbUp,
+                                       imageVector = Icons.Default.ThumbUp,
                                     contentDescription = "Like",
-                                    tint = Color(0xFF5E7CE2),
+                                    tint = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "1.2K",
-                                    color = Color(0xFF5E7CE2),
+                                    text = "${newsItem!!.likeCount}",
+                                    color = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
                                     fontSize = 14.sp
                                 )
                             }
@@ -248,7 +277,9 @@ fun NewsDetailScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clickable { /* Handle comment */ }
+                                    .clickable {
+
+                                    }
                                     .padding(8.dp)
                             ) {
                                 Icon(
@@ -259,7 +290,7 @@ fun NewsDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "245",
+                                    text = "${newsItem!!.commentCount}",
                                     color = Color(0xFF5E7CE2),
                                     fontSize = 14.sp
                                 )
@@ -269,7 +300,13 @@ fun NewsDetailScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clickable { /* Handle share */ }
+                                    .clickable { 
+                                        viewModel.sharePost(newsItem!!.id) { success ->
+                                            if (success) {
+                                                // Handle successful share
+                                            }
+                                        }
+                                    }
                                     .padding(8.dp)
                             ) {
                                 Icon(
@@ -284,6 +321,7 @@ fun NewsDetailScreen(
                                     color = Color(0xFF5E7CE2),
                                     fontSize = 14.sp
                                 )
+
                             }
                         }
                     }
@@ -303,7 +341,7 @@ fun NewsDetailScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Bình luận (245)",
+                            text = "Bình luận ${newsItem!!.commentCount}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
@@ -338,34 +376,57 @@ fun NewsDetailScreen(
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 OutlinedTextField(
-                                    value = "",
-                                    onValueChange = { },
+                                    value = commentText,
+                                    onValueChange = { commentText = it },
                                     placeholder = { Text("Viết bình luận...") },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(20.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedBorderColor = Color.Transparent,
                                         unfocusedBorderColor = Color.Transparent
-                                    )
+                                    ),
+                                    trailingIcon = {
+                                        if (commentText.isNotBlank()) {
+                                            IconButton(
+                                                onClick = {
+                                                    viewModel.addComment(
+                                                        postId = newsItem!!.id,
+                                                        content = commentText
+                                                    ) { success ->
+                                                        if (success) {
+                                                            commentText = ""
+                                                        }
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Send,
+                                                    contentDescription = "Gửi bình luận",
+                                                    tint = Color(0xFF5E7CE2)
+                                                )
+                                            }
+                                        }
+                                    }
                                 )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Sample Comments
-                        CommentItem(
-                            username = "Nguyễn Văn A",
-                            content = "Bài viết rất hữu ích, cảm ơn tác giả!",
-                            time = "2 giờ trước",
-                            likes = 45
-                        )
-
-                        Divider(
-                            color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
-                            thickness = 1.dp,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                        // Comments List
+                        comments.forEach { comment ->
+                            CommentItem(
+                                username = comment.userName,
+                                content = comment.content,
+                                time = getTimeAgo(comment.timestamp),
+                                likes = 0
+                            )
+                            Divider(
+                                color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
+                                thickness = 1.dp,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -422,26 +483,6 @@ fun CommentItem(
             color = Color.Black,
             fontSize = 14.sp
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .clickable { /* Handle like comment */ }
-                .padding(4.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ThumbUp,
-                contentDescription = "Like comment",
-                tint = Color(0xFF5E7CE2),
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = likes.toString(),
-                color = Color(0xFF5E7CE2),
-                fontSize = 12.sp
-            )
-        }
     }
 }
 
@@ -498,6 +539,22 @@ fun RelatedNewsItem(title: String, date: String, color: Color) {
                 modifier = Modifier.padding(12.dp)
             )
         }
+    }
+}
+
+private fun getTimeAgo(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+
+    return when {
+        days > 0 -> "$days ngày trước"
+        hours > 0 -> "$hours giờ trước"
+        minutes > 0 -> "$minutes phút trước"
+        else -> "Vừa xong"
     }
 }
 
