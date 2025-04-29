@@ -157,10 +157,10 @@ class MainActivity : ComponentActivity() {
 
                             composable(
                                 route = "news_detail/{postId}",
-                                arguments = listOf(navArgument("postId") { type = NavType.IntType })
+                                arguments = listOf(navArgument("postId") { type = NavType.StringType })
                             ) { backStackEntry ->
-                                val postId = backStackEntry.arguments?.getInt("postId") ?: 0
-                                NewsDetailScreen(postId , viewModel = newsViewModel , onBackPressed = { navController.popBackStack() })
+                                val postId = backStackEntry.arguments?.getString("postId") ?: ""
+                                NewsDetailScreen(postId , viewModel = newsViewModel , onBackPressed = { navController.popBackStack()  } ,navController)
                             }
                             composable("report") {
                                 ReportScren(
@@ -189,6 +189,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+
                         }
                     }
                 }

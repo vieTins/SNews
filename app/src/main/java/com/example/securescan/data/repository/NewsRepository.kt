@@ -37,7 +37,7 @@ class NewsRepository {
                 try {
                     val data = doc.data ?: return@mapNotNull null
                     NewsItem(
-                        id = (data["id"] as? Long)?.toInt() ?: 0,
+                        id = data["id"] as? String ?: "",
                         title = data["title"] as? String ?: "",
                         summary = data["summary"] as? String ?: "",
                         date = data["date"] as? String ?: "",
@@ -47,13 +47,15 @@ class NewsRepository {
                         readTime = (data["readTime"] as? Long)?.toInt() ?: 0,
                         isFeatured = (data["isFeatured"] as? Boolean) ?: false,
                         content = data["content"] as? String ?: "",
-                        createBy = data["createdBy"] as? String ?: ""
+                        createBy = data["createdBy"] as? String ?: "",
+                        likeCount = (data["likeCount"] as? Long)?.toInt() ?: 0,
+                        commentCount = (data["commentCount"] as? Long)?.toInt() ?: 0,
+                        shareCount = (data["shareCount"] as? Long)?.toInt() ?: 0
                     )
                 } catch (e: Exception) {
                     null
                 }
             } ?: emptyList()
-
             trySend(newsList)
         }
 
@@ -80,7 +82,9 @@ class NewsRepository {
     }
 
     // Lấy tin theo ID
-    fun getNewsById(id: Int): Flow<NewsItem?> {
-        return getAllNews().map { list -> list.find { it.id == id } }
+    fun getNewsById(id: String): Flow<NewsItem?> {
+        return getAllNews().map { list -> list.find {
+            it.id.equals(id, ignoreCase = true)
+        } }
     }
 }

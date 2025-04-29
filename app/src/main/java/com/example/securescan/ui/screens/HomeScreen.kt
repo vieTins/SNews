@@ -527,8 +527,9 @@ fun NewsSection(navController: NavController) {
             color = DeepBlue
         )
         Spacer(modifier = Modifier.height(16.dp))
-        // Danh sách tin tức
-        newsList.forEach { news ->
+        // Danh sách tin tức - tôi chỉ muốn 3 tin tức
+        val newsToShow = newsList.take(3)
+        newsToShow.forEach { news ->
             NewsItem(
                 title = news.title,
                 date = news.date,
