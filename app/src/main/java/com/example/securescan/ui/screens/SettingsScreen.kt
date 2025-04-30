@@ -32,13 +32,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,26 +63,27 @@ import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.securescan.data.models.User
 import com.example.securescan.viewmodel.AuthViewModel
+import com.example.securescan.viewmodel.ThemeViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
     authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
     onLogout: () -> Unit
 ) {
     val viewModel: UserViewModel = viewModel()
     val user by viewModel.user
-    var darkModeEnabled by remember { mutableStateOf(false) }
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val scrollState = rememberScrollState()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -94,7 +96,10 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(DeepBlue, PrimaryBlue)
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primaryContainer
+                            )
                         )
                     )
                     .padding(16.dp)
@@ -109,7 +114,10 @@ fun SettingsScreen(
                             .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
-                                    colors = listOf(LightBlue.copy(alpha = 0.8f), LightBlue.copy(alpha = 0.1f)),
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    ),
                                     radius = 20f
                                 )
                             ),
@@ -118,7 +126,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Settings Icon",
-                            tint = White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -128,7 +136,7 @@ fun SettingsScreen(
                     // Title
                     Text(
                         text = "Cài đặt",
-                        color = White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -145,8 +153,10 @@ fun SettingsScreen(
                 SettingsToggleItem(
                     icon = Icons.Default.DarkMode,
                     title = "Chế độ tối",
-                    isChecked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it }
+                    isChecked = isDarkMode,
+                    onCheckedChange = {
+                        themeViewModel.toggleTheme()
+                    }
                 )
             }
 
@@ -184,7 +194,7 @@ fun SettingsScreen(
             Text(
                 text = "Secure Scan v1.0.0",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -195,13 +205,13 @@ fun SettingsScreen(
 }
 
 @Composable
-fun UserProfileSection(navController: NavController , user : User) {
+fun UserProfileSection(navController: NavController , user: User) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -215,7 +225,7 @@ fun UserProfileSection(navController: NavController , user : User) {
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(PrimaryBlue),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 if (user.profilePic != null) {
@@ -233,7 +243,7 @@ fun UserProfileSection(navController: NavController , user : User) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Error Icon",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.matchParentSize()
                     )
                 }
@@ -246,7 +256,7 @@ fun UserProfileSection(navController: NavController , user : User) {
                 text = user.name,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = DeepBlue
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -255,7 +265,7 @@ fun UserProfileSection(navController: NavController , user : User) {
             Text(
                 text = user.email,
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -263,11 +273,11 @@ fun UserProfileSection(navController: NavController , user : User) {
             // Edit profile button
             Button(
                 onClick = {
-                    navController.navigate("edit_profile") // Navigate to edit profile screen
+                    navController.navigate("edit_profile")
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -303,7 +313,7 @@ fun SettingsCategory(
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -311,7 +321,7 @@ fun SettingsCategory(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
@@ -339,7 +349,7 @@ fun SettingsItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = PrimaryBlue
+            tint = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -347,20 +357,20 @@ fun SettingsItem(
         Text(
             text = title,
             fontSize = 16.sp,
-            color = Color(0xFF212121),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
 
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = "Navigate",
-            tint = Color.Gray
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )
     }
 
     Divider(
         modifier = Modifier.padding(start = 56.dp, end = 16.dp),
-        color = Color(0xFFEEEEEE)
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
     )
 }
 
@@ -380,7 +390,7 @@ fun SettingsToggleItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = PrimaryBlue
+            tint = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -388,7 +398,7 @@ fun SettingsToggleItem(
         Text(
             text = title,
             fontSize = 16.sp,
-            color = Color(0xFF212121),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
 
@@ -396,17 +406,17 @@ fun SettingsToggleItem(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = White,
-                checkedTrackColor = PrimaryBlue,
-                uncheckedThumbColor = White,
-                uncheckedTrackColor = Color.LightGray
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                uncheckedThumbColor = MaterialTheme.colorScheme.surface,
+                uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
             )
         )
     }
 
     Divider(
         modifier = Modifier.padding(start = 56.dp, end = 16.dp),
-        color = Color(0xFFEEEEEE)
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
     )
 }
 
@@ -427,7 +437,7 @@ fun LogoutButton(
                     showDialog = false
                     onLogout()
                 }) {
-                    Text("Đăng xuất", color = Color.Red)
+                    Text("Đăng xuất", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -448,7 +458,7 @@ fun LogoutButton(
                 showDialog = true
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Red
+                containerColor = MaterialTheme.colorScheme.error
             ),
             shape = RoundedCornerShape(8.dp),
             modifier = Modifier.fillMaxWidth()
