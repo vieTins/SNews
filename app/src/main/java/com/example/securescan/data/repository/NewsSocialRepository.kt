@@ -232,6 +232,7 @@ class NewsSocialRepository {
                 }
 
                 val userName = userDoc.getString("name") ?: "Anonymous"
+                val profilePic = userDoc.getString("profilePic")
 
                 // Tìm bài đăng theo field "id" thay vì document ID
                 postsCollection
@@ -253,7 +254,8 @@ class NewsSocialRepository {
                             userId = currentUser.uid,
                             userName = userName,
                             content = content,
-                            timestamp = System.currentTimeMillis()
+                            timestamp = System.currentTimeMillis(),
+                            profilePic = profilePic
                         )
 
                         val newCommentRef = commentsCollection.document()

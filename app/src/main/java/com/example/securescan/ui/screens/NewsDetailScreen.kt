@@ -3,6 +3,7 @@ package com.example.securescan.ui.screens
 import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,10 +33,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.transform.CircleCropTransformation
 import com.example.securescan.R
 import com.example.securescan.viewmodel.NewsViewModel
+import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +56,8 @@ fun NewsDetailScreen(
     val isLiked = userLikes[newsId] ?: false
     var commentText by remember { mutableStateOf("") }
     val comments by viewModel.currentComments.collectAsState()
+    val viewModelUser: UserViewModel = viewModel()
+    val user by viewModelUser.user
 
     Log.d("NewsDetailScreen", "News item: $newsItem + id  = $newsId")
 
@@ -303,7 +311,7 @@ fun NewsDetailScreen(
                                     .clickable { 
                                         viewModel.sharePost(newsItem!!.id) { success ->
                                             if (success) {
-                                                // Handle successful share
+
                                             }
                                         }
                                     }
@@ -361,18 +369,33 @@ fun NewsDetailScreen(
                                     .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // Small Avatar
                                 Box(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF5E7CE2).copy(alpha = 0.1f)),
+                                        .background(Color(0xFFE0E0E0)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "U",
-                                        color = Color(0xFF5E7CE2),
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    if (user.profilePic != null) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(user.profilePic)
+                                                .crossfade(true)
+                                                .transformations(CircleCropTransformation())
+                                                .build(),
+                                            contentDescription = "Image",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.matchParentSize()
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = "Error Icon",
+                                            tint = Color.DarkGray,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 OutlinedTextField(
@@ -419,7 +442,8 @@ fun NewsDetailScreen(
                                 username = comment.userName,
                                 content = comment.content,
                                 time = getTimeAgo(comment.timestamp),
-                                likes = 0
+                                likes = 0,
+                                profilePic = comment.profilePic
                             )
                             Divider(
                                 color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
@@ -439,7 +463,8 @@ fun CommentItem(
     username: String,
     content: String,
     time: String,
-    likes: Int
+    likes: Int,
+    profilePic: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -454,14 +479,28 @@ fun CommentItem(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF5E7CE2).copy(alpha = 0.1f)),
+                    .background(Color(0xFFE0E0E0)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = username.first().toString(),
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold
-                )
+                if (profilePic != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(profilePic)
+                            .crossfade(true)
+                            .transformations(CircleCropTransformation())
+                            .build(),
+                        contentDescription = "User Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize()
+                    )
+                } else {
+                    Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Error Icon",
+                        tint = Color.DarkGray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(8.dp))
             Column {
