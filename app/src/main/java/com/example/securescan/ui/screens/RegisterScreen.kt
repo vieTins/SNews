@@ -33,12 +33,12 @@ fun RegisterScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var showConfirmPassword by remember { mutableStateOf(false) }
 
-    var errorMessage by viewModel.errorMessage2
     val registerSuccess by viewModel.registerSuccess
+    val errorMessage by viewModel.errorMessage2
 
     if (registerSuccess) {
         LaunchedEffect(Unit) {
@@ -60,11 +60,52 @@ fun RegisterScreen(
         ) {
             // Header
             Text(
-                text = "Tạo Tài Khoản",
+                text = "Đăng Ký",
                 color = Color(0xFF2D4EC1),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            // Subtitle
+            Text(
+                text = "Tạo tài khoản mới",
+                fontSize = 16.sp,
+                color = Color.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            // Name field
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text("Họ và tên") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color(0xFF2D4EC1),
+                    focusedBorderColor = Color(0xFF2D4EC1),
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            // Phone field
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                placeholder = { Text("Số điện thoại") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color(0xFF2D4EC1),
+                    focusedBorderColor = Color(0xFF2D4EC1),
+                    unfocusedContainerColor = Color.White
+                )
             )
 
             // Email field
@@ -93,36 +134,9 @@ fun RegisterScreen(
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
                             painter = painterResource(
-                                id = if (showPassword) R.drawable.ic_visibility else R.drawable.ic_visibility_off
+                                id = if (showPassword) R.drawable.ic_visibility_off else R.drawable.ic_visibility
                             ),
-                            contentDescription = if (showPassword) "Hide password" else "Show password"
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFEEEEEE),
-                    focusedBorderColor = Color(0xFF2D4EC1),
-                    unfocusedContainerColor = Color(0xFFF0F4F7)
-                )
-            )
-
-            // Confirm Password field
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                placeholder = { Text("Xác nhận mật khẩu") },
-                visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                        Icon(
-                            painter = painterResource(
-                                id = if (showConfirmPassword) R.drawable.ic_visibility else R.drawable.ic_visibility_off
-                            ),
-                            contentDescription = if (showConfirmPassword) "Hide password" else "Show password"
+                            contentDescription = if (showPassword) "Ẩn mật khẩu" else "Hiện mật khẩu"
                         )
                     }
                 },
@@ -131,20 +145,16 @@ fun RegisterScreen(
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFEEEEEE),
+                    unfocusedBorderColor = Color(0xFF2D4EC1),
                     focusedBorderColor = Color(0xFF2D4EC1),
-                    unfocusedContainerColor = Color(0xFFF0F4F7)
+                    unfocusedContainerColor = Color.White
                 )
             )
 
-            // Sign up button
+            // Register button
             Button(
                 onClick = {
-                    if (password == confirmPassword) {
-                        viewModel.register(email.trim(), password.trim())
-                    } else {
-                        errorMessage = "Mật khẩu không giống nhau"
-                    }
+                    viewModel.register(email.trim(), password.trim(), name.trim(), phone.trim())
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,7 +165,7 @@ fun RegisterScreen(
                 )
             ) {
                 Text(
-                    text = "Đăng kí",
+                    text = "Đăng ký",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -168,6 +178,60 @@ fun RegisterScreen(
                     color = Color.Red,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            // Login link
+            TextButton(
+                onClick = onLoginClick,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Đã có tài khoản? Đăng nhập",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+
+            // Social login section
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Hoặc đăng ký bằng",
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+
+            // Social login buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Google
+                SocialLoginButton(
+                    onClick = onGoogleSignInClick,
+                    iconResId = R.drawable.ic_google,
+                    contentDescription = "Đăng ký bằng Google"
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Facebook
+                SocialLoginButton(
+                    onClick = onFacebookSignInClick,
+                    iconResId = R.drawable.ic_facebook,
+                    contentDescription = "Đăng ký bằng Facebook"
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Apple
+                SocialLoginButton(
+                    onClick = onAppleSignInClick,
+                    iconResId = R.drawable.ic_apple,
+                    contentDescription = "Đăng ký bằng Apple"
                 )
             }
         }

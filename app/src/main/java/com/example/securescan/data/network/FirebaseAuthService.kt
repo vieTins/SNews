@@ -3,9 +3,6 @@ package com.example.securescan.data.network
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class FirebaseAuthService {
 
@@ -24,8 +21,7 @@ class FirebaseAuthService {
             }
     }
 
-
-    fun register(email: String, password: String, callback: (Boolean, String?) -> Unit) {
+    fun register(email: String, password: String, name: String, phone: String, callback: (Boolean, String?) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
@@ -36,9 +32,9 @@ class FirebaseAuthService {
                             "city" to "",
                             "id" to it.uid,
                             "email" to it.email,
-                            "name" to it.email,
+                            "name" to name,
                             "fcmToken" to "FCM_TOKEN",
-                            "phone" to "" ,
+                            "phone" to phone,
                             "profilePic" to "",
                         )
                         db.collection("users").document(it.uid)
@@ -56,15 +52,9 @@ class FirebaseAuthService {
             }
     }
 
-
     fun getCurrentUser(): FirebaseUser? = auth.currentUser
 
     fun logout() {
         auth.signOut()
-        auth.currentUser?.delete()?.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                auth.signOut()
-            }
-        }
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.securescan.data.network.FirebaseAuthService
 
-
 class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel() {
 
     var loginSuccess = mutableStateOf(false)
@@ -12,7 +11,7 @@ class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel
 
     fun login(email: String, password: String) {
         if (email.isEmpty() || password.isEmpty()) {
-            errorMessage.value = "Email and password cannot be empty"
+            errorMessage.value = "Email và mật khẩu không được để trống"
             return
         }
         else {
@@ -31,14 +30,16 @@ class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel
     var registerSuccess = mutableStateOf(false)
     var errorMessage2 = mutableStateOf<String?>(null)
 
-    fun register(email: String, password: String) {
-        if (email.isEmpty() || password.isEmpty()) {
-            errorMessage2.value = "Email and password cannot be empty"
+    fun register(email: String, password: String, name: String, phone: String) {
+        if (email.isEmpty() || password.isEmpty() || name.isEmpty() || phone.isEmpty()) {
+            errorMessage2.value = "Vui lòng điền đầy đủ thông tin"
             return
         }
         else {
-            userRepository.register(email, password) { success, error ->
+            userRepository.register(email, password, name, phone) { success, error ->
                 if (success) {
+                    // Tự động đăng nhập sau khi đăng ký thành công
+                    login(email, password)
                     registerSuccess.value = true
                     errorMessage2.value = null
                 } else {
@@ -52,9 +53,9 @@ class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel
     fun isUserLoggedIn(): Boolean {
         return userRepository.getCurrentUser() != null
     }
+
     fun logout() {
         userRepository.logout()
         loginSuccess.value = false
     }
-
 }

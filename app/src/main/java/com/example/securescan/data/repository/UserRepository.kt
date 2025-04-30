@@ -8,10 +8,9 @@ class UserRepository(private val authService: FirebaseAuthService) {
         authService.login(email, password, callback)
     }
 
-    fun register(email: String, password: String, callback: (Boolean, String?) -> Unit) {
-        authService.register(email, password, callback)
+    fun register(email: String, password: String, name: String, phone: String, callback: (Boolean, String?) -> Unit) {
+        authService.register(email, password, name, phone, callback)
     }
-
 
     fun getCurrentUser() = authService.getCurrentUser()
 
