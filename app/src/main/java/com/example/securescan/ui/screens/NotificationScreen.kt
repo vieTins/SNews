@@ -58,8 +58,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.securescan.data.models.NotificationItem
-import com.example.securescan.data.models.NotificationType
 import com.example.securescan.ui.theme.AccentBlue
 import com.example.securescan.ui.theme.BackgroundColor
 import com.example.securescan.ui.theme.DeepBlue
@@ -69,6 +67,20 @@ import com.example.securescan.ui.theme.PaleBlue
 import com.example.securescan.ui.theme.PrimaryBlue
 import com.example.securescan.ui.theme.White
 import kotlinx.coroutines.delay
+
+data class NotificationItem(
+    val id: Int,
+    val title: String,
+    val message: String,
+    val time: String,
+    val isRead: Boolean,
+    val type: NotificationType,
+    val newsId: Int? = null // ID để liên kết với tin tức cụ thể
+)
+
+enum class NotificationType {
+    NEWS, WARNING, UPDATE, SECURITY
+}
 
 @Composable
 fun NotificationScreen() {

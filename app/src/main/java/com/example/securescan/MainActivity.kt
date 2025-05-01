@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -35,8 +34,10 @@ import com.example.securescan.ui.screens.PersonalInformationScreen
 import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
 import com.example.securescan.ui.screens.ReportScreen
+import com.example.securescan.ui.screens.ReportScren
 import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
 import com.example.securescan.ui.screens.ScanScreen
+import com.example.securescan.ui.screens.ScanScreenTest
 import com.example.securescan.ui.screens.SettingsScreen
 import com.example.securescan.ui.screens.WelcomeScreen
 import com.example.securescan.ui.theme.AppTheme
@@ -46,16 +47,13 @@ import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.ReportsViewModel
 import com.example.securescan.viewmodel.ScanPhoneCardViewModel
 import com.example.securescan.viewmodel.ScanViewModel
-import com.example.securescan.viewmodel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     private val scanViewModel: ScanViewModel by viewModels()
     private val newsViewModel: NewsViewModel by viewModels()
     private val reportsViewModel: ReportsViewModel by viewModels()
-    private val scanPhoneCardViewModel: ScanPhoneCardViewModel by viewModels()
-    private val themeViewModel: ThemeViewModel by viewModels()
-
+    private val scanphonecardViewModel : ScanPhoneCardViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -63,12 +61,10 @@ class MainActivity : ComponentActivity() {
             val factory = AuthViewModelFactory(authService)
             val viewModel: AuthViewModel = viewModel(factory = factory)
 
-            AppTheme(themeViewModel = themeViewModel) {
+            AppTheme {
                 FirebaseSeeder.seedData()
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                Surface(color = MaterialTheme.colorScheme.background) {
+
                     val navController = rememberNavController()
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
@@ -90,8 +86,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        containerColor = MaterialTheme.colorScheme.background,
                         bottomBar = {
                             if (currentRoute !in listOf("welcome", "login", "register")) {
                                 BottomNavigation { destination ->
@@ -146,16 +140,13 @@ class MainActivity : ComponentActivity() {
                                     onAppleSignInClick = {}
                                 )
                             }
-                            composable("home") {
-                                HomeScreen(
-                                    navController = navController,
-                                )
-                            }
+                            composable("home") { HomeScreen(
+                                navController = navController,
+                            ) }
                             composable("settings") {
                                 SettingsScreen(
                                     navController = navController,
                                     authViewModel = viewModel,
-                                    themeViewModel = themeViewModel,
                                     onLogout = {
                                         viewModel.logout()
                                         navController.navigate("welcome") {
@@ -169,6 +160,7 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                 )
                             }
+
                             composable("article") {
                                 NewsScreen(
                                     onNavigateToNewsDetail = { postId ->
@@ -176,23 +168,18 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+
                             composable("scan") {
                                 ScanScreen(viewModel = scanViewModel)
                             }
-                            composable("notifications") {
-                                NotificationScreen()
-                            }
+                            composable("notifications") { NotificationScreen() }
+
                             composable(
                                 route = "news_detail/{postId}",
                                 arguments = listOf(navArgument("postId") { type = NavType.StringType })
                             ) { backStackEntry ->
                                 val postId = backStackEntry.arguments?.getString("postId") ?: ""
-                                NewsDetailScreen(
-                                    postId,
-                                    viewModel = newsViewModel,
-                                    onBackPressed = { navController.popBackStack() },
-                                    navController
-                                )
+                                NewsDetailScreen(postId , viewModel = newsViewModel , onBackPressed = { navController.popBackStack()  } ,navController)
                             }
                             composable("report") {
                                 ReportScreen(
@@ -203,21 +190,17 @@ class MainActivity : ComponentActivity() {
                                 ReportDataScreen(
                                     viewModel = reportsViewModel,
                                     userId = currentUser?.email ?: "",
-                                    onNavigateBack = {
-                                        navController.navigate("home") {
+                                    onNavigateBack = { navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
-                                        }
-                                    },
+                                        } },
                                 )
                             }
                             composable("check_phone_bank") {
                                 ScanPhoneAndCardScreen(
-                                    viewModel = scanPhoneCardViewModel,
-                                    onNavigateBack = {
-                                        navController.navigate("home") {
+                                    viewModel = scanphonecardViewModel ,
+                                    onNavigateBack = { navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
-                                        }
-                                    },
+                                        } },
                                     onViewHistory = {
                                         navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
@@ -225,6 +208,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
+
                         }
                     }
                 }
