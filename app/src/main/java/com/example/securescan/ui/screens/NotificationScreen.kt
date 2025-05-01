@@ -1,5 +1,6 @@
 package com.example.securescan.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,88 +26,39 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.securescan.data.models.NotificationItem
+import com.example.securescan.data.models.NotificationType
+import com.example.securescan.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
 
-data class NotificationItem(
-    val id: Int,
-    val title: String,
-    val message: String,
-    val time: String,
-    val isRead: Boolean,
-    val type: NotificationType,
-    val newsId: Int? = null // ID để liên kết với tin tức cụ thể
-)
 
-enum class NotificationType {
-    NEWS, WARNING, UPDATE, SECURITY
-}
+
 
 @Composable
-fun NotificationScreen() {
+fun NotificationScreen(
+    navController: NavController,
+    viewModel: NotificationViewModel = viewModel()
+) {
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
+    val notifications by viewModel.notifications.collectAsState()
+    var selectedFilter by remember { mutableIntStateOf(0) }
 
-    // Danh sách thông báo mẫu
-    var notifications by remember {
-        mutableStateOf(
-            listOf(
-                NotificationItem(
-                    1,
-                    "Cảnh báo mới",
-                    "Cảnh báo chiêu trò lừa đảo mới qua điện thoại kết hợp mạng xã hội",
-                    "22/03/2025 09:30",
-                    false,
-                    NotificationType.WARNING,
-                    1
-                ),
-                NotificationItem(
-                    2,
-                    "Hướng dẫn mới",
-                    "Hướng dẫn nhận biết và bảo vệ khỏi tấn công Phishing mới nhất",
-                    "20/03/2025 15:45",
-                    true,
-                    NotificationType.NEWS,
-                    2
-                ),
-                NotificationItem(
-                    3,
-                    "Cập nhật an ninh",
-                    "Phát hiện 5 ứng dụng giả mạo ngân hàng đang lây lan trên các kho ứng dụng",
-                    "18/03/2025 11:20",
-                    false,
-                    NotificationType.WARNING,
-                    3
-                ),
-                NotificationItem(
-                    4,
-                    "Cập nhật bảo mật",
-                    "Cập nhật ngay: Lỗ hổng bảo mật nghiêm trọng trên các thiết bị Android",
-                    "15/03/2025 08:15",
-                    true,
-                    NotificationType.UPDATE,
-                    4
-                ),
-                NotificationItem(
-                    5,
-                    "Báo cáo mới",
-                    "Báo cáo xu hướng lừa đảo trực tuyến quý 1 năm 2025 đã được cập nhật",
-                    "12/03/2025 14:50",
-                    false,
-                    NotificationType.NEWS,
-                    5
-                ),
-                NotificationItem(
-                    6,
-                    "Kiểm tra bảo mật",
-                    "Nhắc nhở: Kiểm tra thiết lập bảo mật của tài khoản mạng xã hội thường xuyên",
-                    "10/03/2025 16:30",
-                    true,
-                    NotificationType.SECURITY,
-                    null
-                )
-            )
-        )
+    // Lọc thông báo dựa trên tab được chọn
+    val filteredNotifications = when (selectedFilter) {
+        0 -> notifications // Tất cả
+        1 -> notifications.filter { !it.isRead } // Chưa đọc
+        2 -> notifications.filter { it.type == NotificationType.WARNING } // Cảnh báo
+        3 -> notifications.filter { it.type == NotificationType.NEWS } // Tin tức
+        4 -> notifications.filter { it.type == NotificationType.UPDATE } // Cập nhật
+        else -> notifications
     }
+
+    Log.d("NotificationScreen", "Notifications: $notifications")
+    Log.d("NotificationScreen", "Selected filter: $selectedFilter")
+    Log.d("NotificationScreen", "Filtered notifications: $filteredNotifications")
 
     LaunchedEffect(showSnackbar) {
         if (showSnackbar) {
@@ -127,27 +79,33 @@ fun NotificationScreen() {
             NotificationTopAppBar(
                 unreadCount = notifications.count { !it.isRead },
                 onMarkAllRead = {
-                    notifications = notifications.map { it.copy(isRead = true) }
+                    viewModel.markAllAsRead()
                     snackbarMessage = "Đã đánh dấu tất cả là đã đọc"
                     showSnackbar = true
                 }
             )
 
             // Các tùy chọn lọc thông báo
-            NotificationFilterOptions()
+            NotificationFilterOptions(
+                selectedFilter = selectedFilter,
+                onFilterSelected = { selectedFilter = it }
+            )
 
-            // Danh sách thông báo
+            // Danh sách thông báo đã lọc
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(notifications) { notification ->
+                items(filteredNotifications) { notification ->
                     NotificationItemCard(
                         notification = notification,
                         onNotificationClick = { notificationId ->
                             // Đánh dấu thông báo đã đọc khi click
-                            notifications = notifications.map {
-                                if (it.id == notificationId) it.copy(isRead = true) else it
+                            viewModel.markAsRead(notificationId)
+
+                            // Nếu là thông báo tin tức, điều hướng đến bài viết
+                            if (notification.newsId != null) {
+                                navController.navigate("news_detail/${notification.newsId}")
                             }
 
                             // Hiển thị thông báo
@@ -156,7 +114,7 @@ fun NotificationScreen() {
                         },
                         onDeleteClick = { notificationId ->
                             // Xóa thông báo
-                            notifications = notifications.filter { it.id != notificationId }
+                            viewModel.deleteNotification(notificationId)
                             snackbarMessage = "Đã xóa thông báo"
                             showSnackbar = true
                         }
@@ -164,7 +122,7 @@ fun NotificationScreen() {
                 }
 
                 // Hiển thị khi không có thông báo
-                if (notifications.isEmpty()) {
+                if (filteredNotifications.isEmpty()) {
                     item {
                         EmptyNotifications()
                     }
@@ -295,8 +253,10 @@ fun NotificationTopAppBar(unreadCount: Int, onMarkAllRead: () -> Unit) {
 }
 
 @Composable
-fun NotificationFilterOptions() {
-    var selectedFilter by remember { mutableIntStateOf(0) }
+fun NotificationFilterOptions(
+    selectedFilter: Int,
+    onFilterSelected: (Int) -> Unit
+) {
     val filters = listOf("Tất cả", "Chưa đọc", "Cảnh báo", "Tin tức", "Cập nhật")
 
     ScrollableTabRow(
@@ -312,7 +272,7 @@ fun NotificationFilterOptions() {
         filters.forEachIndexed { index, filter ->
             Tab(
                 selected = selectedFilter == index,
-                onClick = { selectedFilter = index },
+                onClick = { onFilterSelected(index) },
                 modifier = Modifier.padding(horizontal = 4.dp)
             ) {
                 Card(
@@ -337,8 +297,8 @@ fun NotificationFilterOptions() {
 @Composable
 fun NotificationItemCard(
     notification: NotificationItem,
-    onNotificationClick: (Int) -> Unit,
-    onDeleteClick: (Int) -> Unit
+    onNotificationClick: (String) -> Unit,
+    onDeleteClick: (String) -> Unit
 ) {
     val backgroundColor = if (!notification.isRead) PaleBlue else White
 
@@ -505,8 +465,3 @@ fun EmptyNotifications() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 800)
-@Composable
-fun NotificationScreenPreview() {
-    NotificationScreen()
-}

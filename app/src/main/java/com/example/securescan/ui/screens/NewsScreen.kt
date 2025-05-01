@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -38,10 +40,11 @@ import com.example.securescan.R
 import com.example.securescan.data.models.NewsItem
 import com.example.securescan.viewmodel.NewsViewModel
 
-
-
 @Composable
-fun NewsScreen(onNavigateToNewsDetail: (String) -> Unit = {}) {
+fun NewsScreen(
+    onNavigateToNewsDetail: (String) -> Unit = {},
+    navController: NavController
+) {
     val viewModel: NewsViewModel = viewModel()
     val newsList by viewModel.allNews.collectAsState(initial = emptyList())
 
@@ -91,7 +94,12 @@ fun NewsScreen(onNavigateToNewsDetail: (String) -> Unit = {}) {
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
-                    NewsListHeader(if (isSearching) "Kết quả tìm kiếm" else "Tất cả tin tức")
+                    NewsListHeader(
+                        title = if (isSearching) "Kết quả tìm kiếm" else "Tất cả tin tức",
+                        onViewAllClick = {
+                            navController.navigate("all_news")
+                        }
+                    )
                 }
 
                 if (filteredNews.isEmpty() && isSearching) {
@@ -121,7 +129,7 @@ fun NewsScreen(onNavigateToNewsDetail: (String) -> Unit = {}) {
                     }
                 } else {
                     items(filteredNews) { newsItem ->
-                        NewsCard(newsItem, onNewsClick = onNavigateToNewsDetail)
+                        NewsCard(newsItem = newsItem, onNewsClick = onNavigateToNewsDetail)
                     }
                 }
             }
@@ -145,9 +153,6 @@ fun NewsScreen(onNavigateToNewsDetail: (String) -> Unit = {}) {
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -275,6 +280,7 @@ fun NewsTopAppBar(
 @Composable
 fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
     val filteredFeaturedNews = featuredNews.filter { it.isFeatured }
+    
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
     ) {
@@ -287,117 +293,119 @@ fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        filteredFeaturedNews.forEach{
-            mainNews ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clickable { onNewsClick(mainNews.id) },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(end = 16.dp)
+        ) {
+            items(filteredFeaturedNews) { news ->
+                Card(
+                    modifier = Modifier
+                        .width(280.dp)
+                        .height(200.dp)
+                        .clickable { onNewsClick(news.id) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    AsyncImage(
-                        model = mainNews.imageRes,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                    )
-
-                    // Gradient overlay
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        Color.Black.copy(alpha = 0.7f)
-                                    ),
-                                    startY = 0f,
-                                    endY = 400f
-                                )
-                            )
-                    )
-
-                    // Content
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Bottom
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        // Tag
-                        Card(
-                            shape = RoundedCornerShape(4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = getColorFromString(mainNews.tagColor)
-                            )
-                        ) {
-                            Text(
-                                text = mainNews.tag,
-                                color = White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Title
-                        Text(
-                            text = mainNews.title,
-                            color = White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                        AsyncImage(
+                            model = news.imageRes,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        // Gradient overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.7f)
+                                        ),
+                                        startY = 0f,
+                                        endY = 400f
+                                    )
+                                )
+                        )
 
-                        // Date and read time
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        // Content
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Bottom
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = null,
-                                tint = White.copy(alpha = 0.8f),
-                                modifier = Modifier.size(14.dp)
-                            )
+                            // Tag
+                            Card(
+                                shape = RoundedCornerShape(4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = getColorFromString(news.tagColor)
+                                )
+                            ) {
+                                Text(
+                                    text = news.tag,
+                                    color = White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
 
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
+                            // Title
                             Text(
-                                text = mainNews.date,
-                                color = White.copy(alpha = 0.8f),
-                                fontSize = 12.sp
+                                text = news.title,
+                                color = White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
 
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                            Icon(
-                                imageVector = Icons.Default.AccessTime,
-                                contentDescription = null,
-                                tint = White.copy(alpha = 0.8f),
-                                modifier = Modifier.size(14.dp)
-                            )
+                            // Date and read time
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = null,
+                                    tint = White.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(14.dp)
+                                )
 
-                            Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
 
-                            Text(
-                                text = "${mainNews.readTime} phút đọc",
-                                color = White.copy(alpha = 0.8f),
-                                fontSize = 12.sp
-                            )
+                                Text(
+                                    text = news.date,
+                                    color = White.copy(alpha = 0.8f),
+                                    fontSize = 12.sp
+                                )
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Icon(
+                                    imageVector = Icons.Default.AccessTime,
+                                    contentDescription = null,
+                                    tint = White.copy(alpha = 0.8f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(4.dp))
+
+                                Text(
+                                    text = "${news.readTime} phút đọc",
+                                    color = White.copy(alpha = 0.8f),
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -407,7 +415,7 @@ fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
 }
 
 @Composable
-fun NewsListHeader(title: String) {
+fun NewsListHeader(title: String, onViewAllClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -427,7 +435,7 @@ fun NewsListHeader(title: String) {
             fontSize = 14.sp,
             color = AccentBlue,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.clickable { /* Xử lý khi click vào "Xem tất cả" */ }
+            modifier = Modifier.clickable(onClick = onViewAllClick)
         )
     }
 }
@@ -437,129 +445,87 @@ fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable { onNewsClick(newsItem.id) },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Image
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
             ) {
                 AsyncImage(
                     model = newsItem.imageRes,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
-
-                // Tag
-                Card(
-                    shape = RoundedCornerShape(4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = getColorFromString(newsItem.tagColor)
-                    ),
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .align(Alignment.TopStart)
-                ) {
-                    Text(
-                        text = newsItem.tag,
-                        color = White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
             }
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Content
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Title
                 Text(
                     text = newsItem.title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
                     color = DeepBlue,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = newsItem.summary,
-                    fontSize = 14.sp,
-                    color = Color.DarkGray,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
+                // Date and read time
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Date and read time
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(14.dp)
-                        )
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(12.dp)
+                    )
 
-                        Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                        Text(
-                            text = newsItem.date,
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
+                    Text(
+                        text = newsItem.date,
+                        color = Color.Gray,
+                        fontSize = 11.sp
+                    )
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                        Icon(
-                            imageVector = Icons.Default.AccessTime,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(14.dp)
-                        )
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(12.dp)
+                    )
 
-                        Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                        Text(
-                            text = "${newsItem.readTime} phút đọc",
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    // Share button
-                    IconButton(
-                        onClick = { /* Xử lý khi click vào nút share */ },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
-                            tint = AccentBlue,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Text(
+                        text = "${newsItem.readTime} phút",
+                        color = Color.Gray,
+                        fontSize = 11.sp
+                    )
                 }
             }
         }
@@ -576,8 +542,3 @@ fun getColorFromString(colorString: String): Color {
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 800)
-@Composable
-fun NewsScreenPreview() {
-    NewsScreen()
-}

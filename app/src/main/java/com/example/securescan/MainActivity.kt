@@ -25,6 +25,7 @@ import androidx.navigation.navArgument
 import com.example.securescan.data.network.FirebaseAuthService
 import com.example.securescan.data.repository.FirebaseSeeder
 import com.example.securescan.ui.components.BottomNavigation
+import com.example.securescan.ui.screens.AllNewsScreen
 import com.example.securescan.ui.screens.HomeScreen
 import com.example.securescan.ui.screens.LoginScreen
 import com.example.securescan.ui.screens.NewsDetailScreen
@@ -164,13 +165,16 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToNewsDetail = { postId ->
                                         navController.navigate("news_detail/$postId")
                                     }
+                                    , navController
                                 )
                             }
 
                             composable("scan") {
                                 ScanScreenTest(viewModel = scanViewModel)
                             }
-                            composable("notifications") { NotificationScreen() }
+                            composable("notifications") { 
+                                NotificationScreen(navController = navController) 
+                            }
 
                             composable(
                                 route = "news_detail/{postId}",
@@ -205,6 +209,9 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 )
+                            }
+                            composable("all_news") {
+                                AllNewsScreen(navController = navController)
                             }
 
                         }

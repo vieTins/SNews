@@ -169,4 +169,8 @@ class NewsViewModel(
             }
         )
     }
+
+    private val notificationViewModel = NotificationViewModel()
+
+
 }
