@@ -1,27 +1,50 @@
 package com.example.securescan.ui.screens
 
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,62 +52,66 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
-import com.example.securescan.R
 import com.example.securescan.data.models.ReportItem
 import com.example.securescan.viewmodel.ReportsViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ReportScren(viewModel : ReportsViewModel) {
-        // State for form fields
-        var reportType by remember { mutableStateOf("url") } // Default to URL reporting
-        var inputValue by remember { mutableStateOf("") }
-        var description by remember { mutableStateOf("") }
-        var isSubmitting by remember { mutableStateOf(false) }
-        var submitSuccess by remember { mutableStateOf(false) }
-        var errorMessage by remember { mutableStateOf("") }
-        val scrollState = rememberScrollState()
+fun ReportScreen(viewModel: ReportsViewModel) {
+    // State for form fields
+    var reportType by remember { mutableStateOf("url") }
+    var inputValue by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
+    var submitSuccess by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
-        var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-        var target by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var target by remember { mutableStateOf("") }
 
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val email = currentUser?.email ?: "anonymous"
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val email = currentUser?.email ?: "anonymous"
 
-        // Image picker launcher
-        val imagePicker = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            uri?.let {
-                selectedImageUri = it
-            }
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
         }
+    }
 
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BackgroundColor)
+                .verticalScroll(scrollState)
         ) {
-            Column (
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-            ){
+            // Top Bar
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 4.dp
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(DeepBlue, PrimaryBlue)
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primaryContainer
+                                )
                             )
                         )
                         .padding(16.dp)
@@ -92,14 +119,16 @@ fun ReportScren(viewModel : ReportsViewModel) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Settings icon
                         Box(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(CircleShape)
                                 .background(
                                     Brush.radialGradient(
-                                        colors = listOf(LightBlue.copy(alpha = 0.8f), LightBlue.copy(alpha = 0.1f)),
+                                        colors = listOf(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                        ),
                                         radius = 20f
                                     )
                                 ),
@@ -108,35 +137,33 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             Icon(
                                 imageVector = Icons.Default.Report,
                                 contentDescription = "Report Icon",
-                                tint = White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        // Title
                         Text(
                             text = "Báo cáo",
-                            color = White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
             }
 
+            // Main Content
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
+                    .fillMaxWidth()
                     .padding(16.dp)
             ) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
                         modifier = Modifier
@@ -147,7 +174,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                         Icon(
                             imageVector = Icons.Default.Warning,
                             contentDescription = "Report Icon",
-                            tint = Color(0xFFE53935), // Red color for warning
+                            tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(48.dp)
                         )
 
@@ -157,7 +184,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             text = "Báo cáo lừa đảo",
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
-                            color = Color(0xFF1E3A8A) // Deep blue
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -165,7 +192,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                         Text(
                             text = "Giúp chúng tôi bảo vệ cộng đồng bằng cách báo cáo các trường hợp lừa đảo",
                             fontSize = 14.sp,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -177,7 +204,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
                         modifier = Modifier
@@ -188,7 +215,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             text = "Chọn loại báo cáo",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
-                            color = Color(0xFF1E3A8A)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -227,7 +254,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(
                         modifier = Modifier
@@ -250,7 +277,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             text = inputLabel,
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = Color(0xFF1E3A8A)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -265,6 +292,15 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                 "phone", "card" -> KeyboardOptions(keyboardType = KeyboardType.Number)
                                 else -> KeyboardOptions(keyboardType = KeyboardType.Uri)
                             },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             leadingIcon = {
                                 Icon(
                                     imageVector = when (reportType) {
@@ -273,7 +309,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                         else -> Icons.Default.CreditCard
                                     },
                                     contentDescription = null,
-                                    tint = Color(0xFF3B82F6)
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             },
                             singleLine = true
@@ -285,7 +321,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             text = "Mô tả chi tiết",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = Color(0xFF1E3A8A)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -298,16 +334,25 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                 .fillMaxWidth()
                                 .height(120.dp),
                             shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             maxLines = 5
                         )
+
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Image Upload Section
                         Text(
                             text = "Ảnh minh họa (nếu có)",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = Color(0xFF1E3A8A)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -317,7 +362,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                 .fillMaxWidth()
                                 .height(200.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color.LightGray.copy(alpha = 0.2f))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
                                 .clickable { imagePicker.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
@@ -336,13 +381,13 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                     Icon(
                                         imageVector = Icons.Default.AddAPhoto,
                                         contentDescription = "Add photo",
-                                        tint = Color.Gray,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(48.dp)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = "Chọn ảnh",
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -354,7 +399,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = errorMessage,
-                                color = Color.Red,
+                                color = MaterialTheme.colorScheme.error,
                                 fontSize = 14.sp
                             )
                         }
@@ -369,7 +414,7 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                         target = target,
                                         description = description,
                                         reportedBy = email,
-                                        imageUrl =  selectedImageUri.toString(),
+                                        imageUrl = selectedImageUri.toString(),
                                         check = false
                                     )
                                     isSubmitting = true
@@ -400,22 +445,22 @@ fun ReportScren(viewModel : ReportsViewModel) {
                                 .height(50.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF1E3A8A)
+                                containerColor = MaterialTheme.colorScheme.primary
                             ),
                             enabled = !isSubmitting
                         ) {
                             if (isSubmitting) {
                                 CircularProgressIndicator(
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(24.dp),
                                     strokeWidth = 2.dp
                                 )
-
                             } else {
                                 Text(
                                     text = "Gửi báo cáo",
                                     fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         }
@@ -424,95 +469,95 @@ fun ReportScren(viewModel : ReportsViewModel) {
 
                 Spacer(modifier = Modifier.height(20.dp))
             }
+        }
 
-            // Success Dialog
-            if (submitSuccess) {
-                Box(
+        // Success Dialog
+        if (submitSuccess) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
+                    .clickable {
+                        submitSuccess = false
+                        inputValue = ""
+                        description = ""
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .clickable {
-                            // Dismiss on background click
-                            submitSuccess = false
-                            inputValue = ""
-                            description = ""
-                        },
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth(0.85f)
+                        .padding(16.dp)
+                        .clickable(enabled = false) { }
                 ) {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .padding(16.dp)
-                            .clickable(enabled = false) { }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(24.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF4CAF50).copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Success",
-                                    tint = Color(0xFF4CAF50),
-                                    modifier = Modifier.size(40.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = "Báo cáo thành công!",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp,
-                                color = Color(0xFF1E3A8A)
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Success",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(40.dp)
                             )
+                        }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                            Text(
-                                text = "Cảm ơn bạn đã giúp chúng tôi làm cho cộng đồng trở nên an toàn hơn. Chúng tôi sẽ xem xét báo cáo của bạn sớm nhất có thể.",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                textAlign = TextAlign.Center
+                        Text(
+                            text = "Báo cáo thành công!",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Cảm ơn bạn đã giúp chúng tôi làm cho cộng đồng trở nên an toàn hơn. Chúng tôi sẽ xem xét báo cáo của bạn sớm nhất có thể.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = {
+                                submitSuccess = false
+                                target = ""
+                                description = ""
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
                             )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Button(
-                                onClick = {
-                                    submitSuccess = false
-                                    target = ""
-                                    description = ""
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF1E3A8A)
-                                )
-                            ) {
-                                Text(
-                                    text = "OK",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp
-                                )
-                            }
+                        ) {
+                            Text(
+                                text = "OK",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }
             }
         }
+    }
 }
 
 @Composable
@@ -528,21 +573,28 @@ fun ReportTypeButton(
             .width(100.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
-            .background(if (selected) Color(0xFF3B82F6).copy(alpha = 0.1f) else Color.Transparent)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                else MaterialTheme.colorScheme.surface
+            )
             .padding(12.dp)
     ) {
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(if (selected) Color(0xFF3B82F6).copy(alpha = 0.2f) else Color(0xFFE5E7EB))
+                .background(
+                    if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) Color(0xFF3B82F6) else Color.Gray,
+                tint = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -552,7 +604,8 @@ fun ReportTypeButton(
         Text(
             text = label,
             fontSize = 12.sp,
-            color = if (selected) Color(0xFF3B82F6) else Color.Gray,
+            color = if (selected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
     }
@@ -565,13 +618,10 @@ fun validateInput(input: String, type: String): Boolean {
             input.matches(urlPattern.toRegex())
         }
         "phone" -> {
-            // Simple Vietnamese phone number validation
             val phonePattern = "^(0|\\+84)(3|5|7|8|9)\\d{8}$"
             input.matches(phonePattern.toRegex())
         }
         "card" -> {
-            // Simple credit card validation (checks if it's a valid format, not if it's a real card)
-            // example "1234 5678 9012 3456" is valid
             val cardPattern = "^\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4}$"
             input.matches(cardPattern.toRegex())
         }

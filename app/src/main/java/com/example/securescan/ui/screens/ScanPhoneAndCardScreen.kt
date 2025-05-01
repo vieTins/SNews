@@ -1,26 +1,58 @@
 package com.example.securescan.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,10 +61,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.securescan.R
 import com.example.securescan.data.models.ScanState
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.theme.DeepBlue
+import com.example.securescan.ui.theme.ErrorRed
+import com.example.securescan.ui.theme.LightBlue
+import com.example.securescan.ui.theme.White
 import com.example.securescan.viewmodel.ScanPhoneCardViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 //// Define colors
@@ -41,7 +78,7 @@ val Green = Color(0xFF81C784)
 
 @Composable
 fun ScanPhoneAndCardScreen(
-    viewModel: ScanPhoneCardViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    viewModel: ScanPhoneCardViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     onViewHistory: () -> Unit
 ) {
@@ -155,73 +192,13 @@ fun ScannerAppBar(
     onBackClick: () -> Unit,
     onHistoryClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf( DeepBlue, PrimaryBlue)
-                )
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Back button
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = White
-                )
-            }
-
-            // App icon with gradient background
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Security,
-                    contentDescription = "Security Icon",
-                    tint = White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Title
-            Text(
-                text = title,
-                color = White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
-            )
-
-            // History button
-            IconButton(onClick = onHistoryClick) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.History,
-                        contentDescription = "History Icon",
-                        tint = White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-        }
-    }
+    AppTopBar(
+        title = title,
+        navigationIcon = Icons.Default.ArrowBackIosNew,
+        onNavigationClick = onBackClick,
+        actionIcon = Icons.Default.History,
+        onActionIconClick = onHistoryClick,
+    )
 }
 
 enum class ScanType {
@@ -261,7 +238,7 @@ fun ScanTypeTabs(
 @Composable
 fun ScanTypeTab(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -361,8 +338,8 @@ fun PhoneNumberScanForm(
             },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = if (isPhoneValid) Color.Gray else Red,
-                focusedBorderColor = if (isPhoneValid) LightBlue else Red
+                unfocusedBorderColor = if (isPhoneValid) Color.Gray else ErrorRed,
+                focusedBorderColor = if (isPhoneValid) LightBlue else ErrorRed
             ),
             isError = !isPhoneValid,
             keyboardOptions = KeyboardOptions(
@@ -375,7 +352,7 @@ fun PhoneNumberScanForm(
         if (!isPhoneValid) {
             Text(
                 text = "Làm ơn nhập một số điện thoại hợp lệ",
-                color = Red,
+                color = ErrorRed,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(Alignment.Start)
@@ -481,8 +458,8 @@ fun CardNumberScanForm(
             },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = if (isCardValid) Color.Gray else Red,
-                focusedBorderColor = if (isCardValid) LightBlue else Red
+                unfocusedBorderColor = if (isCardValid) Color.Gray else ErrorRed,
+                focusedBorderColor = if (isCardValid) LightBlue else ErrorRed
             ),
             isError = !isCardValid,
             keyboardOptions = KeyboardOptions(
@@ -495,7 +472,7 @@ fun CardNumberScanForm(
         if (!isCardValid) {
             Text(
                 text = "Làm ơn nhập một số tài khoản hợp lệ",
-                color = Red,
+                color = ErrorRed,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(Alignment.Start)
@@ -558,12 +535,12 @@ fun ScanResultCard(result: ScanState.Result) {
         Triple(
             Brush.verticalGradient(
                 colors = listOf(
-                    Red.copy(alpha = 0.1f),
-                    Red.copy(alpha = 0.05f)
+                    ErrorRed.copy(alpha = 0.1f),
+                    ErrorRed.copy(alpha = 0.05f)
                 )
             ),
-            Red,
-            Red.copy(alpha = 0.3f)
+            ErrorRed,
+            ErrorRed.copy(alpha = 0.3f)
         )
     } else {
         Triple(
@@ -617,7 +594,7 @@ fun ScanResultCard(result: ScanState.Result) {
                         .clip(CircleShape)
                         .background(
                             if (result.isMalicious) {
-                                Red.copy(alpha = 0.1f)
+                                ErrorRed.copy(alpha = 0.1f)
                             } else {
                                 Green.copy(alpha = 0.1f)
                             }
@@ -642,7 +619,7 @@ fun ScanResultCard(result: ScanState.Result) {
                     text = result.message,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (result.isMalicious) Red else Green,
+                    color = if (result.isMalicious) ErrorRed else Green,
                     textAlign = TextAlign.Center
                 )
 

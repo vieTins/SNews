@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.database)
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth.ktx)

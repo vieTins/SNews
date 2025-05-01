@@ -28,27 +28,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.securescan.data.models.User
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.theme.*
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-val PrimaryBlue = Color(0xFF3674B5)
-val SecondaryBlue = Color(0xFF578FCA)
-val AccentBlue = Color(0xFF1E88E5)
-val LightBlue = Color(0xFFA1E3F9)
-val PaleBlue = Color(0xFFD1F8EF)
-val DeepBlue = Color(0xFF0D47A1)
-val Red = Color(0xFFFF3B30)
-val White = Color(0xFFFFFFFF)
-val BackgroundColor = Color(0xFFF8FBFF)
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -69,12 +59,11 @@ fun HomeScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top app bar - cố định
             TopAppBar(user)
 
             // Main content - có thể kéo
@@ -122,11 +111,11 @@ fun HomeScreen(navController: NavController) {
         ) {
             Card(
                 modifier = Modifier.padding(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF323232))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Text(
                     text = lastClickMessage,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(12.dp),
                     fontSize = 14.sp
                 )
@@ -137,54 +126,11 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun TopAppBar(user : User) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(DeepBlue, PrimaryBlue)
-                )
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Shield icon với hiệu ứng ánh sáng
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                LightBlue.copy(alpha = 0.8f),
-                                LightBlue.copy(alpha = 0.1f)
-                            ),
-                            radius = 20f
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Shield,
-                    contentDescription = "Shield Icon",
-                    tint = White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Name
-            Text(
-                text = user.name,
-                color = White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
+    AppTopBar(
+        title = user.name,
+        leadingIconUrl = user.profilePic,
+        background = MaterialTheme.colorScheme.primary,
+    )
 }
 
 @Composable
@@ -197,7 +143,7 @@ fun SearchBar() {
                 // Xử lý click vào search bar
             },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -209,14 +155,14 @@ fun SearchBar() {
             Icon(
                 imageVector = Icons.Outlined.Search,
                 contentDescription = "Search",
-                tint = Color.Gray
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = "Nhập số điện thoại cần kiểm tra",
-                color = Color.Gray,
+                text = "Tìm kiếm công cụ",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 16.sp
             )
         }
@@ -229,14 +175,6 @@ fun SecurityCarousel() {
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp)
     ) {
-        Text(
-            text = "Cẩm nang An toàn thông tin",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = DeepBlue
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         val pagerState = rememberPagerState(pageCount = { 3 })
         val coroutineScope = rememberCoroutineScope()
@@ -276,7 +214,7 @@ fun SecurityCarousel() {
                             .size(if (isSelected) 10.dp else 8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isSelected) White else White.copy(alpha = 0.5f)
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             )
                             .clickable {
                                 coroutineScope.launch {
@@ -293,9 +231,9 @@ fun SecurityCarousel() {
 @Composable
 fun SecurityCard(page: Int) {
     val gradientColors = when (page) {
-        0 -> listOf(SecondaryBlue, DeepBlue)
-        1 -> listOf(Color(0xFF26A69A), Color(0xFF00796B))
-        else -> listOf(Color(0xFF5C6BC0), Color(0xFF3949AB))
+        0 -> listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+        1 -> listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer)
+        else -> listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary)
     }
 
     val icons = listOf(
@@ -305,7 +243,7 @@ fun SecurityCard(page: Int) {
     )
 
     val titles = listOf(
-        "CẨM NANG ĐẢM BẢO\nAN TOÀN THÔNG TIN",
+        "CẨM NANG AN TOÀN THÔNG TIN",
         "BẢO VỆ DỮ LIỆU\nCÁ NHÂN",
         "CẢNH BÁO LỪA ĐẢO\nTRỰC TUYẾN"
     )
@@ -338,9 +276,9 @@ fun SecurityCard(page: Int) {
                 ) {
                     Text(
                         text = titles[page],
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         lineHeight = 28.sp
                     )
 
@@ -348,13 +286,13 @@ fun SecurityCard(page: Int) {
 
                     Button(
                         onClick = { },
-                        colors = ButtonDefaults.buttonColors(containerColor = White),
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceLight),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "Xem ngay",
-                            color = gradientColors[0],
+                            color = baseBlue3,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -372,7 +310,7 @@ fun SecurityCard(page: Int) {
                         imageVector = icons[page],
                         contentDescription = null,
                         modifier = Modifier.size(72.dp),
-                        tint = White.copy(alpha = 0.8f)
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -386,10 +324,10 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
         modifier = Modifier.padding(start = 16.dp, end = 16.dp)
     ) {
         Text(
-            text = "Chức năng",
+            text = "Tính năng",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -402,7 +340,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.Call,
                 title = "Kiểm tra SĐT",
-                gradientColors = listOf(Color(0xFF42A5F5), Color(0xFF1976D2)),
+                gradientColors = listOf(FunctionGreen, FunctionGreen),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate("check_phone_bank")
@@ -411,7 +349,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.Language,
                 title = "Kiểm tra Web",
-                gradientColors = listOf(Color(0xFF66BB6A), Color(0xFF388E3C)),
+                gradientColors = listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate("scan")
@@ -420,7 +358,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.CreditCard,
                 title = "Kiểm tra STK",
-                gradientColors = listOf(Color(0xFFFFB74D), Color(0xFFF57C00)),
+                gradientColors = listOf(FunctionPurple, FunctionPurpleDark),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate("check_phone_bank")
@@ -438,7 +376,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.DataThresholding,
                 title = "Dữ Liệu Lừa Đảo",
-                gradientColors = listOf(Color(0xFFEC407A), Color(0xFFC2185B)),
+                gradientColors = listOf(MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.error),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate("report_data")
@@ -447,7 +385,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.AutoMirrored.Filled.Assignment,
                 title = "Báo cáo",
-                gradientColors = listOf(Color(0xFF7E57C2), Color(0xFF512DA8)),
+                gradientColors = listOf(FunctionOrange, FunctionOrangeDark),
                 modifier = Modifier.weight(1f),
                 onClick = {
                     navController.navigate("report")
@@ -456,7 +394,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.Info,
                 title = "Hướng dẫn",
-                gradientColors = listOf(Color(0xFF26A69A), Color(0xFF00796B)),
+                gradientColors = listOf(FunctionTeal, FunctionTealDark),
                 modifier = Modifier.weight(1f),
                 onClick = { onFunctionClick("Bạn đã click vào Hướng dẫn") }
             )
@@ -496,7 +434,7 @@ fun FunctionItem(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -507,7 +445,7 @@ fun FunctionItem(
             text = title,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = DeepBlue,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
     }
@@ -524,7 +462,7 @@ fun NewsSection(navController: NavController) {
             text = "Tin tức & Cảnh báo",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
         // Danh sách tin tức - tôi chỉ muốn 3 tin tức
@@ -533,8 +471,8 @@ fun NewsSection(navController: NavController) {
             NewsItem(
                 title = news.title,
                 date = news.date,
-                accentColor = Color(android.graphics.Color.parseColor(news.tagColor))
-            , onClick = {
+                accentColor = Color(android.graphics.Color.parseColor(news.tagColor)),
+                onClick = {
                     navController.navigate("news_detail/${news.id}")
                 }
             )
@@ -544,13 +482,13 @@ fun NewsSection(navController: NavController) {
 }
 
 @Composable
-fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Unit = {}) {
+fun NewsItem(title: String, date: String, accentColor: Color, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(96.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -576,7 +514,7 @@ fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Un
                     text = title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DeepBlue,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2
                 )
 
@@ -585,7 +523,7 @@ fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Un
                 Text(
                     text = date,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -593,11 +531,10 @@ fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Un
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp)
             )
         }
     }
-
 }
 

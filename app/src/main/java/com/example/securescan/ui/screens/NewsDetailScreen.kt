@@ -4,40 +4,75 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.securescan.R
+import com.example.securescan.data.models.NewsItem
 import com.example.securescan.viewmodel.NewsViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NewsDetailScreen(
     newsId: String,
@@ -50,6 +85,8 @@ fun NewsDetailScreen(
     val isLiked = userLikes[newsId] ?: false
     var commentText by remember { mutableStateOf("") }
     val comments by viewModel.currentComments.collectAsState()
+    val allNews by viewModel.allNews.collectAsState(initial = emptyList())
+    val featuredNews = allNews.filter { it.isFeatured && it.id != newsId }.take(3)
 
     Log.d("NewsDetailScreen", "News item: $newsItem + id  = $newsId")
 
@@ -78,7 +115,7 @@ fun NewsDetailScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         item {
             Box {
@@ -96,14 +133,14 @@ fun NewsDetailScreen(
                     modifier = Modifier
                         .padding(12.dp)
                         .background(
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                             shape = CircleShape
                         )
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -113,11 +150,11 @@ fun NewsDetailScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(android.graphics.Color.parseColor(newsItem!!.tagColor))
+                    color = getColorFromString(newsItem!!.tagColor)
                 ) {
                     Text(
                         text = newsItem!!.tag.uppercase(),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
@@ -129,7 +166,7 @@ fun NewsDetailScreen(
                     text = newsItem!!.title,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DeepBlue
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -138,26 +175,26 @@ fun NewsDetailScreen(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Author",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "By ${newsItem!!.createBy}",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = "Read Time",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = "${newsItem!!.readTime} min read",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -167,14 +204,14 @@ fun NewsDetailScreen(
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = "Date",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = newsItem!!.date,
                         fontSize = 13.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -183,47 +220,7 @@ fun NewsDetailScreen(
         }
 
         item {
-            AndroidView(
-                factory = { context ->
-                    WebView(context).apply {
-                        settings.javaScriptEnabled = false
-                        webViewClient = WebViewClient()
-                        val styledContent = """
-    <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body {
-                font-size: 13px;
-                line-height: 1.6;
-                padding: 7px;
-                margin: 0;
-            }
-            img {
-                max-width: 100%;
-                height: auto;
-                display: block;
-                margin: auto;
-            }
-        </style>
-    </head>
-    <body>
-        ${newsItem!!.content}
-    </body>
-    </html>
-    """
-                        loadDataWithBaseURL(
-                            null,
-                            styledContent,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
+            NewsContentWebView(content = newsItem!!.content)
         }
 
         // Interaction Section
@@ -237,9 +234,9 @@ fun NewsDetailScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 4.dp,
-                    border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -260,15 +257,15 @@ fun NewsDetailScreen(
                                     .padding(8.dp)
                             ) {
                                 Icon(
-                                       imageVector = Icons.Default.ThumbUp,
+                                    imageVector = Icons.Default.ThumbUp,
                                     contentDescription = "Like",
-                                    tint = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
+                                    tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${newsItem!!.likeCount}",
-                                    color = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
+                                    color = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp
                                 )
                             }
@@ -285,13 +282,13 @@ fun NewsDetailScreen(
                                 Icon(
                                     imageVector = Icons.Default.Comment,
                                     contentDescription = "Comment",
-                                    tint = Color(0xFF5E7CE2),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${newsItem!!.commentCount}",
-                                    color = Color(0xFF5E7CE2),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp
                                 )
                             }
@@ -312,16 +309,15 @@ fun NewsDetailScreen(
                                 Icon(
                                     imageVector = Icons.Default.Share,
                                     contentDescription = "Share",
-                                    tint = Color(0xFF5E7CE2),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "Share",
-                                    color = Color(0xFF5E7CE2),
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontSize = 14.sp
                                 )
-
                             }
                         }
                     }
@@ -333,9 +329,9 @@ fun NewsDetailScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 4.dp,
-                    border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -344,7 +340,7 @@ fun NewsDetailScreen(
                             text = "Bình luận ${newsItem!!.commentCount}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -352,8 +348,8 @@ fun NewsDetailScreen(
                         // Comment Input
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF5E7CE2).copy(alpha = 0.05f),
-                            border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                         ) {
                             Row(
                                 modifier = Modifier
@@ -365,12 +361,12 @@ fun NewsDetailScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF5E7CE2).copy(alpha = 0.1f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = "U",
-                                        color = Color(0xFF5E7CE2),
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -383,7 +379,9 @@ fun NewsDetailScreen(
                                     shape = RoundedCornerShape(20.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedBorderColor = Color.Transparent,
-                                        unfocusedBorderColor = Color.Transparent
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                                     ),
                                     trailingIcon = {
                                         if (commentText.isNotBlank()) {
@@ -402,7 +400,7 @@ fun NewsDetailScreen(
                                                 Icon(
                                                     imageVector = Icons.Default.Send,
                                                     contentDescription = "Gửi bình luận",
-                                                    tint = Color(0xFF5E7CE2)
+                                                    tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
                                         }
@@ -422,12 +420,180 @@ fun NewsDetailScreen(
                                 likes = 0
                             )
                             Divider(
-                                color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
                     }
+                }
+
+                // Featured News Carousel
+                if (featuredNews.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Tin tức liên quan",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    
+                    val pagerState = rememberPagerState(pageCount = { featuredNews.size })
+                    val coroutineScope = rememberCoroutineScope()
+
+                    // Auto-scroll carousel
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            delay(3000)
+                            val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
+                            pagerState.animateScrollToPage(nextPage)
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            FeaturedNewsCard(
+                                news = featuredNews[page],
+                                onClick = { navController.navigate("news_detail/${featuredNews[page].id}") }
+                            )
+                        }
+
+                        // Indicator dots
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            repeat(featuredNews.size) { index ->
+                                val isSelected = pagerState.currentPage == index
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (isSelected) 10.dp else 8.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        )
+                                        .clickable {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(index)
+                                            }
+                                        }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FeaturedNewsCard(news: NewsItem, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AsyncImage(
+                model = news.imageRes,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            ),
+                            startY = 0f,
+                            endY = 400f
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Card(
+                    shape = RoundedCornerShape(4.dp),
+                    colors = CardDefaults.cardColors(containerColor = getColorFromString(news.tagColor))
+                ) {
+                    Text(
+                        text = news.tag,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = news.title,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = news.date,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        fontSize = 12.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = "${news.readTime} phút đọc",
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
@@ -454,12 +620,12 @@ fun CommentItem(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF5E7CE2).copy(alpha = 0.1f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = username.first().toString(),
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -468,77 +634,21 @@ fun CommentItem(
                 Text(
                     text = username,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = time,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = content,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp
         )
-    }
-}
-
-@Composable
-fun RelatedNewsItem(title: String, date: String, color: Color) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Colored vertical indicator
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .fillMaxHeight()
-                    .background(color)
-            )
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = DeepBlue,
-                    maxLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = date,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
-
-            // Arrow icon
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.padding(12.dp)
-            )
-        }
     }
 }
 
@@ -556,5 +666,120 @@ private fun getTimeAgo(timestamp: Long): String {
         minutes > 0 -> "$minutes phút trước"
         else -> "Vừa xong"
     }
+}
+
+@Composable
+private fun NewsContentWebView(content: String) {
+    val textColor = MaterialTheme.colorScheme.onBackground.toArgb()
+    val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
+    
+    AndroidView(
+        factory = { context ->
+            WebView(context).apply {
+                settings.apply {
+                    javaScriptEnabled = false
+                    domStorageEnabled = true
+                    setSupportZoom(true)
+                }
+                setBackgroundColor(backgroundColor)
+                webViewClient = WebViewClient()
+                val styledContent = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-size: 16px;
+                line-height: 1.6;
+                padding: 16px;
+                margin: 0;
+                color: $textColor;
+                background-color: $backgroundColor;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 16px auto;
+                border-radius: 8px;
+            }
+            p {
+                margin: 16px 0;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                margin: 24px 0 16px 0;
+            }
+            a {
+                color: $textColor;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            blockquote {
+                margin: 16px 0;
+                padding: 16px;
+                border-left: 4px solid $textColor;
+                background-color: $backgroundColor;
+            }
+            code {
+                background-color: $backgroundColor;
+                padding: 2px 4px;
+                border-radius: 4px;
+                font-family: monospace;
+            }
+            pre {
+                background-color: $backgroundColor;
+                padding: 16px;
+                border-radius: 8px;
+                overflow-x: auto;
+                margin: 16px 0;
+            }
+            ul, ol {
+                padding-left: 24px;
+                margin: 16px 0;
+            }
+            li {
+                margin: 8px 0;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 16px 0;
+            }
+            th, td {
+                padding: 12px;
+                border: 1px solid $textColor;
+            }
+            th {
+                background-color: $backgroundColor;
+            }
+            hr {
+                border: none;
+                border-top: 1px solid $textColor;
+                margin: 24px 0;
+            }
+        </style>
+    </head>
+    <body>
+        $content
+    </body>
+    </html>
+    """
+                loadDataWithBaseURL(
+                    null,
+                    styledContent,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+    )
 }
 

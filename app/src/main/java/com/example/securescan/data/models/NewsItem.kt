@@ -1,6 +1,6 @@
 package com.example.securescan.data.models
 
-data class  NewsItem(
+data class NewsItem(
     val id: String = "",
     val title: String = "",
     val summary: String = "",

@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
@@ -31,6 +30,8 @@ import com.example.securescan.viewmodel.ReportsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.securescan.R
+import com.example.securescan.ui.theme.*
+
 @Composable
 fun ReportDataScreen(
     userId: String,

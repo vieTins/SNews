@@ -48,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +61,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.securescan.data.models.User
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.AuthViewModel
 import com.example.securescan.viewmodel.ThemeViewModel
 import com.example.securescan.viewmodel.UserViewModel
@@ -277,7 +277,7 @@ fun UserProfileSection(navController: NavController , user: User) {
                 },
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = baseBlue3
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -349,7 +349,7 @@ fun SettingsItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = MaterialTheme.colorScheme.primary
+            tint = baseBlue3
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -390,7 +390,7 @@ fun SettingsToggleItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = MaterialTheme.colorScheme.primary
+            tint = baseBlue3
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -406,7 +406,7 @@ fun SettingsToggleItem(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedThumbColor = baseBlue3,
                 checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
                 uncheckedThumbColor = MaterialTheme.colorScheme.surface,
                 uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)

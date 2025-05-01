@@ -38,6 +38,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -65,6 +66,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
+import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.viewmodel.UserViewModel
 
 @Composable
@@ -103,7 +105,7 @@ fun PersonalInformationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -111,37 +113,11 @@ fun PersonalInformationScreen(
                 .verticalScroll(scrollState)
         ) {
             // Top app bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(DeepBlue, PrimaryBlue)
-                        )
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = White
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Thông tin cá nhân",
-                        color = White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+            AppTopBar(
+                title = "Thông tin cá nhân",
+                navigationIcon = Icons.Default.ArrowBack,
+                onNavigationClick = { navController.navigateUp() }
+            )
 
             // Profile Header with Avatar
             Box(
@@ -160,7 +136,10 @@ fun PersonalInformationScreen(
                             .clip(CircleShape)
                             .background(
                                 Brush.radialGradient(
-                                    colors = listOf(PrimaryBlue, DeepBlue)
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 )
                             ),
                         contentAlignment = Alignment.Center
@@ -180,7 +159,7 @@ fun PersonalInformationScreen(
                             Icon(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = "Avatar",
-                                tint = White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(80.dp)
                             )
                         }
@@ -197,12 +176,12 @@ fun PersonalInformationScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(PrimaryBlue)
+                                        .background(MaterialTheme.colorScheme.primary)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CameraAlt,
                                         contentDescription = "Change Avatar",
-                                        tint = White,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -230,13 +209,13 @@ fun PersonalInformationScreen(
                                 colors = TextFieldDefaults.colors(
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = PrimaryBlue,
-                                    unfocusedIndicatorColor = Color.LightGray
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 textStyle = TextStyle(
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = DeepBlue,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     textAlign = TextAlign.Center
                                 )
                             )
@@ -246,7 +225,7 @@ fun PersonalInformationScreen(
                             text = name,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = DeepBlue,
+                            color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -260,7 +239,7 @@ fun PersonalInformationScreen(
                             .padding(horizontal = 16.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = LightBlue.copy(alpha = 0.3f)
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                         )
                     ) {
                         Row(
@@ -270,14 +249,14 @@ fun PersonalInformationScreen(
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = "Verified User",
-                                tint = PrimaryBlue,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Tài khoản đã xác thực",
                                 fontSize = 14.sp,
-                                color = DeepBlue
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -292,7 +271,7 @@ fun PersonalInformationScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
@@ -354,7 +333,7 @@ fun PersonalInformationScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -411,7 +390,7 @@ fun InfoItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
 
@@ -424,7 +403,7 @@ fun InfoItem(
                 Text(
                     text = label,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -438,13 +417,13 @@ fun InfoItem(
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = PrimaryBlue,
-                            unfocusedIndicatorColor = Color.LightGray
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         textStyle = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = DeepBlue
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     )
                 } else {
@@ -452,7 +431,7 @@ fun InfoItem(
                         text = value,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = DeepBlue
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -462,7 +441,7 @@ fun InfoItem(
             Spacer(modifier = Modifier.height(8.dp))
             Divider(
                 modifier = Modifier.padding(start = 40.dp),
-                color = Color(0xFFEEEEEE)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)
             )
         }
     }

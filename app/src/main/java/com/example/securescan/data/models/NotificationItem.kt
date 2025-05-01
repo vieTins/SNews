@@ -1,7 +1,5 @@
 package com.example.securescan.data.models
 
-import com.example.securescan.ui.screens.NotificationType
-
 data class NotificationItem(
     val id: Int,
     val title: String,

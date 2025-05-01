@@ -3,16 +3,49 @@ package com.example.securescan.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,21 +58,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.securescan.data.models.NotificationItem
+import com.example.securescan.data.models.NotificationType
+import com.example.securescan.ui.theme.AccentBlue
+import com.example.securescan.ui.theme.BackgroundColor
+import com.example.securescan.ui.theme.DeepBlue
+import com.example.securescan.ui.theme.ErrorRed
+import com.example.securescan.ui.theme.LightBlue
+import com.example.securescan.ui.theme.PaleBlue
+import com.example.securescan.ui.theme.PrimaryBlue
+import com.example.securescan.ui.theme.White
 import kotlinx.coroutines.delay
-
-data class NotificationItem(
-    val id: Int,
-    val title: String,
-    val message: String,
-    val time: String,
-    val isRead: Boolean,
-    val type: NotificationType,
-    val newsId: Int? = null // ID để liên kết với tin tức cụ thể
-)
-
-enum class NotificationType {
-    NEWS, WARNING, UPDATE, SECURITY
-}
 
 @Composable
 fun NotificationScreen() {
@@ -421,7 +450,7 @@ fun NotificationItemCard(
 @Composable
 fun NotificationTypeIcon(type: NotificationType) {
     val (icon, color) = when (type) {
-        NotificationType.WARNING -> Icons.Default.Warning to Red
+        NotificationType.WARNING -> Icons.Default.Warning to ErrorRed
         NotificationType.NEWS -> Icons.AutoMirrored.Filled.Article to AccentBlue
         NotificationType.UPDATE -> Icons.Default.Update to Color(0xFF8BC34A)
         NotificationType.SECURITY -> Icons.Default.Security to Color(0xFF7E57C2)
