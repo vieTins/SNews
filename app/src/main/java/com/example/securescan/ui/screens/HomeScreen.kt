@@ -39,6 +39,9 @@ import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 val PrimaryBlue = Color(0xFF3674B5)
 val SecondaryBlue = Color(0xFF578FCA)
@@ -545,6 +548,13 @@ fun NewsSection(navController: NavController) {
 
 @Composable
 fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Unit = {}) {
+    val timestamp = date?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
+
+    val date1 = Date(timestamp)
+
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val formattedDate = formatter.format(date1)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -583,7 +593,7 @@ fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Un
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = date,
+                    text = formattedDate,
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

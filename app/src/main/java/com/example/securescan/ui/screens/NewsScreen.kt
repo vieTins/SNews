@@ -39,6 +39,9 @@ import coil.compose.AsyncImage
 import com.example.securescan.R
 import com.example.securescan.data.models.NewsItem
 import com.example.securescan.viewmodel.NewsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun NewsScreen(
@@ -138,7 +141,9 @@ fun NewsScreen(
         // Floating Action Button
         if (!isSearching) {
             FloatingActionButton(
-                onClick = { /* TODO: Handle FAB click */ },
+                onClick = {
+                    navController.navigate("bookmarks")
+                },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
@@ -146,7 +151,7 @@ fun NewsScreen(
                 contentColor = White
             ) {
                 Icon(
-                    imageVector = Icons.Default.Notifications,
+                    imageVector = Icons.Default.Bookmark,
                     contentDescription = "Đăng ký nhận thông báo"
                 )
             }
@@ -442,6 +447,13 @@ fun NewsListHeader(title: String, onViewAllClick: () -> Unit) {
 
 @Composable
 fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
+    val timestampString = newsItem?.date
+    val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
+
+    val date = Date(timestamp)
+
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val formattedDate = formatter.format(date)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -505,7 +517,7 @@ fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text = newsItem.date,
+                        text = formattedDate,
                         color = Color.Gray,
                         fontSize = 11.sp
                     )

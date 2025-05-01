@@ -25,6 +25,7 @@ import androidx.navigation.navArgument
 import com.example.securescan.data.network.FirebaseAuthService
 import com.example.securescan.data.repository.FirebaseSeeder
 import com.example.securescan.ui.components.BottomNavigation
+import com.example.securescan.ui.screens.AllBookmarkScreen
 import com.example.securescan.ui.screens.AllNewsScreen
 import com.example.securescan.ui.screens.HomeScreen
 import com.example.securescan.ui.screens.LoginScreen
@@ -174,6 +175,13 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("notifications") { 
                                 NotificationScreen(navController = navController) 
+                            }
+
+                            composable("bookmarks") {
+                                AllBookmarkScreen(
+                                    viewModel = newsViewModel,
+                                    navController = navController
+                                )
                             }
 
                             composable(

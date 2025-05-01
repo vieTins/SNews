@@ -42,6 +42,9 @@ import com.example.securescan.R
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +56,21 @@ fun NewsDetailScreen(
 ) {
     val newsItem by viewModel.getNewsById(newsId).collectAsState(initial = null)
     val userLikes by viewModel.userLikes.collectAsState()
+    val userBookmarks by viewModel.userBookmarks.collectAsState()
     val isLiked = userLikes[newsId] ?: false
+    val isBookmarked = userBookmarks[newsId] ?: false
     var commentText by remember { mutableStateOf("") }
     val comments by viewModel.currentComments.collectAsState()
     val viewModelUser: UserViewModel = viewModel()
     val user by viewModelUser.user
+
+    val timestampString = newsItem?.date
+    val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
+
+    val date = Date(timestamp)
+
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val formattedDate = formatter.format(date)
 
     Log.d("NewsDetailScreen", "News item: $newsItem + id  = $newsId")
 
@@ -73,6 +86,7 @@ fun NewsDetailScreen(
         Log.d("NewsDetailScreen", "Loading comments and checking like status for post $newsId")
         viewModel.loadComments(newsId)
         viewModel.checkUserLikedPost(newsId)
+        viewModel.checkUserBookmarkedPost(newsId)
     }
 
     LaunchedEffect(Unit) {
@@ -180,7 +194,7 @@ fun NewsDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = newsItem!!.date,
+                        text = formattedDate,
                         fontSize = 13.sp,
                         color = Color.Gray
                     )
@@ -329,7 +343,29 @@ fun NewsDetailScreen(
                                     color = Color(0xFF5E7CE2),
                                     fontSize = 14.sp
                                 )
+                            }
 
+                            // Bookmark Button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable {
+                                        viewModel.toggleBookmark(newsId)
+                                    }
+                                    .padding(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                    contentDescription = "Bookmark",
+                                    tint = if (isBookmarked) Color(0xFF5E7CE2) else Color.Gray,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isBookmarked) "Đã lưu" else "Lưu",
+                                    color = if (isBookmarked) Color(0xFF5E7CE2) else Color.Gray,
+                                    fontSize = 14.sp
+                                )
                             }
                         }
                     }

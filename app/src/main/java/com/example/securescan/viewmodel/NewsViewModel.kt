@@ -37,6 +37,12 @@ class NewsViewModel(
     private val _currentComments = MutableStateFlow<List<CommentPost>>(emptyList())
     val currentComments: StateFlow<List<CommentPost>> = _currentComments
 
+    private val _userBookmarks = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val userBookmarks: StateFlow<Map<String, Boolean>> = _userBookmarks
+
+    private val _bookmarkedNews = MutableStateFlow<List<NewsItem>>(emptyList())
+    val bookmarkedNews: StateFlow<List<NewsItem>> = _bookmarkedNews
+
     //  News theo tìm kiếm
     @OptIn(ExperimentalCoroutinesApi::class)
     val filteredNews: StateFlow<List<NewsItem>> = _searchQuery
@@ -170,7 +176,54 @@ class NewsViewModel(
         )
     }
 
+    fun toggleBookmark(postId: String) {
+        viewModelScope.launch {
+            try {
+                socialRepository.toggleBookmark(
+                    postId = postId,
+                    onSuccess = {
+                        checkUserBookmarkedPost(postId)
+                        loadBookmarkedNews() // Reload bookmarked news after toggling
+                    },
+                    onError = { e ->
+                        _error.value = e.message
+                    }
+                )
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
+    fun checkUserBookmarkedPost(postId: String) {
+        socialRepository.checkIfUserBookmarkedPost(postId) { isBookmarked ->
+            _userBookmarks.value = _userBookmarks.value.toMutableMap().apply {
+                put(postId, isBookmarked)
+            }
+        }
+    }
+
+    private fun loadBookmarkedNews() {
+        viewModelScope.launch {
+            try {
+                socialRepository.getBookmarkedNews(
+                    onSuccess = { newsList ->
+                        _bookmarkedNews.value = newsList
+                    },
+                    onError = { e ->
+                        _error.value = e.message
+                    }
+                )
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
     private val notificationViewModel = NotificationViewModel()
 
+    init {
+        loadBookmarkedNews()
+    }
 
 }
