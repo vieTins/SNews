@@ -34,10 +34,10 @@ import com.example.securescan.ui.screens.PersonalInformationScreen
 import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
 import com.example.securescan.ui.screens.ReportScreen
-import com.example.securescan.ui.screens.ReportScren
+import com.example.securescan.ui.screens.ReportScreen
 import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
 import com.example.securescan.ui.screens.ScanScreen
-import com.example.securescan.ui.screens.ScanScreenTest
+import com.example.securescan.ui.screens.ScanScreen
 import com.example.securescan.ui.screens.SettingsScreen
 import com.example.securescan.ui.screens.WelcomeScreen
 import com.example.securescan.ui.theme.AppTheme
@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
     private val scanViewModel: ScanViewModel by viewModels()
     private val newsViewModel: NewsViewModel by viewModels()
     private val reportsViewModel: ReportsViewModel by viewModels()
-    private val scanphonecardViewModel : ScanPhoneCardViewModel by viewModels()
+    private val scanPhoneCardViewModel : ScanPhoneCardViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -197,7 +197,7 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("check_phone_bank") {
                                 ScanPhoneAndCardScreen(
-                                    viewModel = scanphonecardViewModel ,
+                                    viewModel = scanPhoneCardViewModel ,
                                     onNavigateBack = { navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
                                         } },
