@@ -34,9 +34,7 @@ import com.example.securescan.ui.screens.PersonalInformationScreen
 import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
 import com.example.securescan.ui.screens.ReportScreen
-import com.example.securescan.ui.screens.ReportScreen
 import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
-import com.example.securescan.ui.screens.ScanScreen
 import com.example.securescan.ui.screens.ScanScreen
 import com.example.securescan.ui.screens.SettingsScreen
 import com.example.securescan.ui.screens.WelcomeScreen
@@ -49,6 +47,7 @@ import com.example.securescan.viewmodel.ScanPhoneCardViewModel
 import com.example.securescan.viewmodel.ScanViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+@Suppress("UNREACHABLE_CODE")
 class MainActivity : ComponentActivity() {
     private val scanViewModel: ScanViewModel by viewModels()
     private val newsViewModel: NewsViewModel by viewModels()
@@ -152,7 +151,8 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate("welcome") {
                                             popUpTo(0) { inclusive = true }
                                         }
-                                    }
+                                    },
+                                    themeViewModel = TODO()
                                 )
                             }
                             composable("edit_profile") {
@@ -166,13 +166,14 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToNewsDetail = { postId ->
                                         navController.navigate("news_detail/$postId")
                                     }
+                                    , navController
                                 )
                             }
 
                             composable("scan") {
                                 ScanScreen(viewModel = scanViewModel)
                             }
-                            composable("notifications") { NotificationScreen() }
+                            composable("notifications") { NotificationScreen(navController) }
 
                             composable(
                                 route = "news_detail/{postId}",
