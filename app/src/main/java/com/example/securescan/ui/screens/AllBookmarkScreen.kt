@@ -91,7 +91,7 @@ fun AllBookmarkScreen(
 
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Xem lại bài viết thú vị mà bạn đã lưu lại",
+                    text = "Xem lại bài viết thú vị mà bạn đã lưu lại ngay nào !",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
                     color = Color(0xFF2A5298)

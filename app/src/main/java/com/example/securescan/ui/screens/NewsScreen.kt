@@ -54,6 +54,9 @@ fun NewsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
+    var selectedFilter by remember { mutableStateOf("Tất cả") }
+    val filters = listOf("Tất cả", "Bảo mật", "Công nghệ", "Tài chính", "Pháp luật")
+
     // Lọc tin tức dựa trên query tìm kiếm
     val filteredNews = if (searchQuery.isBlank()) {
         newsList
@@ -83,6 +86,42 @@ fun NewsScreen(
                     searchQuery = ""
                 }
             )
+
+            // Filter Bar
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filters) { filter ->
+                    FilterChip(
+                        selected = filter == selectedFilter,
+                        onClick = { selectedFilter = filter },
+                        label = { Text(filter) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = when (filter) {
+                                    "Tất cả" -> Icons.Default.AllInclusive
+                                    "Bảo mật" -> Icons.Default.Security
+                                    "Công nghệ" -> Icons.Default.Computer
+                                    "Tài chính" -> Icons.Default.AccountBalance
+                                    "Pháp luật" -> Icons.Default.Gavel
+                                    else -> Icons.Default.Info
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF5E7CE2),
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White
+                        )
+                    )
+                }
+            }
 
             // Main Content
             LazyColumn(
