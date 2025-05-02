@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,9 +21,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CheckCircle
@@ -38,6 +39,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -52,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -92,17 +93,26 @@ fun ScanPhoneAndCardScreen(
     var selectedTab by remember { mutableStateOf(ScanType.PHONE) }
     val coroutineScope = rememberCoroutineScope()
     val scanState by viewModel.scanState
+    val scrollState = rememberScrollState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(brush = background)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             // Custom App Bar
-            ScannerAppBar(
+            AppTopBar(
                 title = "Kiểm Tra An Toàn",
-                onBackClick = onNavigateBack,
-                onHistoryClick = onViewHistory
+                navigationIcon = Icons.Default.ArrowBackIosNew,
+                onNavigationClick = onNavigateBack,
+                actionIcon = Icons.Default.History,
+                onActionIconClick = onViewHistory
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -113,7 +123,6 @@ fun ScanPhoneAndCardScreen(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // show image news5
                 Image(
                     painter = painterResource(id = R.drawable.news3),
                     contentDescription = "News",
@@ -128,163 +137,128 @@ fun ScanPhoneAndCardScreen(
                     text = "Quét ngay để bảo vệ bạn và gia đình khỏi các mối đe dọa lừa đảo.",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Color(0xFF2A5298)
+                    color = DeepBlue
                 )
             }
 
-            // Tab Selection
-            ScanTypeTabs(
-                selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it }
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Input Form
-            when (selectedTab) {
-                ScanType.PHONE -> PhoneNumberScanForm(
-                    scanState = scanState,
-                    onSubmit = { phoneNumber ->
-                        coroutineScope.launch {
-                            viewModel.checkPhoneIsPhishing(phoneNumber ,
-                                onSuccess = { isPhishing ->
-                                    // Cập nhật kết quả quét vào scanState
-                                    if (isPhishing) {
-                                        viewModel.scanState.value = ScanState.Result(
-                                            isMalicious = true,
-                                            message = "Số điện thoại này có dấu hiệu lừa đảo!",
-                                            details = "Cảnh báo: Số điện thoại này có thể là lừa đảo ! Cẩn thận khi giao dịch hoặc mua bán"
-                                        )
-                                    } else {
-                                        viewModel.scanState.value = ScanState.Result(
-                                            isMalicious = false,
-                                            message = "Số điện thoại không bị phát hiện là phần mềm độc hại.",
-                                            details = "Không có dấu hiệu lừa đảo."
-                                        )
-                                    }
-                                },
-                                onFailure = { exception ->
-                                    // Cập nhật scanState khi có lỗi
-                                    viewModel.scanState.value = ScanState.Result(
-                                        isMalicious = false,
-                                        message = "Quá trình quét thất bại.",
-                                        details = exception.message ?: "Lỗi không xác định"
-                                    )
-                                }
+            // Scan Type Selection Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Chọn đối tượng cần quét",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 16.sp,
+                        color = DeepBlue
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = { selectedTab = ScanType.PHONE },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedTab == ScanType.PHONE) DeepBlue else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "Số Điện Thoại",
+                                color = if (selectedTab == ScanType.PHONE) White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = { selectedTab = ScanType.CARD },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (selectedTab == ScanType.CARD) DeepBlue else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "Số Tài Khoản",
+                                color = if (selectedTab == ScanType.CARD) White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
-                )
-                ScanType.CARD -> CardNumberScanForm(
-                    scanState = scanState,
-                    onSubmit = { cardNumber ->
-                        coroutineScope.launch {
-//                            viewModel.scanCardNumber(cardNumber)
-                        }
-                    }
-                )
+                }
             }
-        }
-    }
-}
 
-@Composable
-fun ScannerAppBar(
-    title: String,
-    onBackClick: () -> Unit,
-    onHistoryClick: () -> Unit
-) {
-    AppTopBar(
-        title = title,
-        navigationIcon = Icons.Default.ArrowBackIosNew,
-        onNavigationClick = onBackClick,
-        actionIcon = Icons.Default.History,
-        onActionIconClick = onHistoryClick,
-    )
-}
+            Spacer(modifier = Modifier.height(16.dp))
 
-enum class ScanType {
-    PHONE, CARD
-}
+            // Input Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    when (selectedTab) {
+                        ScanType.PHONE -> PhoneNumberScanForm(
+                            scanState = scanState,
+                            onSubmit = { phoneNumber ->
+                                coroutineScope.launch {
+                                    viewModel.checkPhoneIsPhishing(phoneNumber,
+                                        onSuccess = { isPhishing ->
+                                            if (isPhishing) {
+                                                viewModel.scanState.value = ScanState.Result(
+                                                    isMalicious = true,
+                                                    message = "Số điện thoại này có dấu hiệu lừa đảo!",
+                                                    details = "Cảnh báo: Số điện thoại này có thể là lừa đảo ! Cẩn thận khi giao dịch hoặc mua bán"
+                                                )
+                                            } else {
+                                                viewModel.scanState.value = ScanState.Result(
+                                                    isMalicious = false,
+                                                    message = "Số điện thoại không bị phát hiện là phần mềm độc hại.",
+                                                    details = "Không có dấu hiệu lừa đảo."
+                                                )
+                                            }
+                                        },
+                                        onFailure = { exception ->
+                                            viewModel.scanState.value = ScanState.Result(
+                                                isMalicious = false,
+                                                message = "Quá trình quét thất bại.",
+                                                details = exception.message ?: "Lỗi không xác định"
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        )
+                        ScanType.CARD -> CardNumberScanForm(
+                            scanState = scanState,
+                            onSubmit = { cardNumber ->
+                                coroutineScope.launch {
+                                    // Keep existing card scanning logic
+                                }
+                            }
+                        )
+                    }
+                }
+            }
 
-@Composable
-fun ScanTypeTabs(
-    selectedTab: ScanType,
-    onTabSelected: (ScanType) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        ScanTypeTab(
-            title = "Số Điện Thoại",
-            icon = Icons.Default.Phone,
-            isSelected = selectedTab == ScanType.PHONE,
-            onClick = { onTabSelected(ScanType.PHONE) },
-            modifier = Modifier.weight(1f)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        ScanTypeTab(
-            title = "Số Tài Khoản",
-            icon = Icons.Default.CreditCard,
-            isSelected = selectedTab == ScanType.CARD,
-            onClick = { onTabSelected(ScanType.CARD) },
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-fun ScanTypeTab(
-    title: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor = if (isSelected) {
-        Brush.verticalGradient(
-            colors = listOf(
-                LightBlue.copy(alpha = 0.2f),
-                LightBlue.copy(alpha = 0.1f)
-            )
-        )
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(
-                Color.White,
-                Color.White
-            )
-        )
-    }
-
-    val textColor = if (isSelected) Color(0xFF2A5298) else Color.Gray
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(brush = backgroundColor)
-            .clickable { onClick() }
-            .padding(16.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = textColor,
-                modifier = Modifier.size(32.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = title,
-                color = textColor,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-            )
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -298,16 +272,14 @@ fun PhoneNumberScanForm(
     var isPhoneValid by remember { mutableStateOf(true) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Kiểm Tra Số Điện Thoại",
             fontSize = 20.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF2A5298)
+            color = DeepBlue
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -321,7 +293,6 @@ fun PhoneNumberScanForm(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Phone number input field
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = {
@@ -362,7 +333,6 @@ fun PhoneNumberScanForm(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Scan button
         Button(
             onClick = {
                 if (phoneNumber.isNotEmpty() && isPhoneValid) {
@@ -396,7 +366,6 @@ fun PhoneNumberScanForm(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Show scan result
         AnimatedVisibility(
             visible = scanState is ScanState.Result,
             enter = fadeIn(),
@@ -418,16 +387,14 @@ fun CardNumberScanForm(
     var isCardValid by remember { mutableStateOf(true) }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Kiểm Tra Tài Khoản",
             fontSize = 20.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF2A5298)
+            color = DeepBlue
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -441,7 +408,6 @@ fun CardNumberScanForm(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Card number input field
         OutlinedTextField(
             value = cardNumber,
             onValueChange = {
@@ -482,7 +448,6 @@ fun CardNumberScanForm(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Scan button
         Button(
             onClick = {
                 if (cardNumber.isNotEmpty() && isCardValid) {
@@ -495,7 +460,7 @@ fun CardNumberScanForm(
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = LightBlue
+                containerColor = DeepBlue
             ),
             enabled = scanState !is ScanState.Scanning && cardNumber.isNotEmpty() && isCardValid
         ) {
@@ -516,7 +481,6 @@ fun CardNumberScanForm(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Show scan result
         AnimatedVisibility(
             visible = scanState is ScanState.Result,
             enter = fadeIn(),
@@ -546,16 +510,15 @@ fun ScanResultCard(result: ScanState.Result) {
         Triple(
             Brush.verticalGradient(
                 colors = listOf(
-                    Green.copy(alpha = 0.1f),
-                    Green.copy(alpha = 0.05f)
+                    Color(0xFF81C784).copy(alpha = 0.1f),
+                    Color(0xFF81C784).copy(alpha = 0.05f)
                 )
             ),
-            Green,
-            Green.copy(alpha = 0.3f)
+            Color(0xFF81C784),
+            Color(0xFF81C784).copy(alpha = 0.3f)
         )
     }
 
-    // Pulse animation for the icon
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -596,7 +559,7 @@ fun ScanResultCard(result: ScanState.Result) {
                             if (result.isMalicious) {
                                 ErrorRed.copy(alpha = 0.1f)
                             } else {
-                                Green.copy(alpha = 0.1f)
+                                Color(0xFF81C784).copy(alpha = 0.1f)
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -619,7 +582,7 @@ fun ScanResultCard(result: ScanState.Result) {
                     text = result.message,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (result.isMalicious) ErrorRed else Green,
+                    color = if (result.isMalicious) ErrorRed else Color(0xFF81C784),
                     textAlign = TextAlign.Center
                 )
 
@@ -634,4 +597,8 @@ fun ScanResultCard(result: ScanState.Result) {
             }
         }
     }
+}
+
+enum class ScanType {
+    PHONE, CARD
 }

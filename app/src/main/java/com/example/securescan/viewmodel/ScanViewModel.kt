@@ -1,25 +1,28 @@
 package com.example.securescan.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.securescan.data.models.ScanHistory
+import com.example.securescan.data.models.ScanType
 import com.example.securescan.data.network.VirusTotalApiService
+import com.example.securescan.data.repository.ScanRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 
 class ScanViewModel : ViewModel() {
     private val apiKey = "4aa49aa105d9fe124cbfb0f0073ea91a6194a6738ef735d5e112e605b78edacb"
-    private val TAG = "VirusTotalScanner"
-
-
+    private val scanRepository = ScanRepository()
+    private val _scanHistory = MutableStateFlow<List<ScanHistory>>(emptyList())
+    val scanHistory: StateFlow<List<ScanHistory>> = _scanHistory
 
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://www.virustotal.com/api/v3/")
@@ -28,7 +31,17 @@ class ScanViewModel : ViewModel() {
 
     private val apiService = retrofit.create(VirusTotalApiService::class.java)
 
-    fun scanFile(filePath: String, onResult: (String) -> Unit) {
+    fun loadScanHistory(userId: String) {
+        viewModelScope.launch {
+            try {
+                val history = scanRepository.getScanHistoryByUserId(userId)
+                _scanHistory.value = history
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun scanFile(filePath: String, userId: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
             onResult("Starting file scan...")
 
@@ -39,7 +52,7 @@ class ScanViewModel : ViewModel() {
                     return@launch
                 }
 
-                val requestFile = RequestBody.create("multipart/form-data".toMediaTypeOrNull(), file)
+                val requestFile = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
                 val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
 
                 val response = apiService.uploadFile(apiKey, body)
@@ -53,57 +66,82 @@ class ScanViewModel : ViewModel() {
 
                     onResult("File uploaded successfully. Scanning in progress...")
                     val scanResult = waitForScanResult(analysisId)
+                    
+                    // Parse malicious count from result
+                    val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                    val match = maliciousRegex.find(scanResult)
+                    val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+                    
+                    // Save scan history
+                    val scanHistory = ScanHistory(
+                        userId = userId,
+                        type = ScanType.FILE.name,
+                        target = file.name,
+                        result = scanRepository.determineScanResult(ScanType.FILE, maliciousCount)
+                    )
+                    scanRepository.saveScanHistory(scanHistory)
+                    
+                    // Reload scan history after saving
+                    loadScanHistory(userId)
+                    
                     onResult(scanResult)
                 } else {
                     val errorCode = response.code()
-                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                    Log.e(TAG, "Error uploading file. Code: $errorCode, Error: $errorBody")
+                    response.errorBody()?.string() ?: "Unknown error"
                     onResult("Error uploading file. HTTP Status: $errorCode")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception during file scan", e)
                 onResult("Error: ${e.message ?: "Unknown error occurred"}")
             }
         }
     }
 
-    fun scanUrl(url: String, onResult: (String) -> Unit) {
+    fun scanUrl(url: String, userId: String, onResult: (String) -> Unit) {
         viewModelScope.launch {
             onResult("Starting URL scan...")
 
-            // Chuẩn hóa URL trước khi gửi
             val normalizedUrl = normalizeUrl(url)
-            Log.d(TAG, "Normalized URL for scanning: $normalizedUrl")
 
             try {
                 val response = apiService.scanUrl(apiKey, normalizedUrl)
 
-                Log.d(TAG, "Response from URL scan: ${response.body()}")
-
                 if (response.isSuccessful && response.body() != null) {
                     val analysisId = response.body()?.data?.id ?: ""
-                    Log.d(TAG, "URL Scan submitted. Analysis ID: ${response.body()?.data?.id}")
                     if (analysisId.isEmpty()) {
                         onResult("Error: Could not get analysis ID")
                         return@launch
                     }
 
-
                     val scanResult = waitForScanResult(analysisId)
+                    
+                    // Parse malicious count from result
+                    val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                    val match = maliciousRegex.find(scanResult)
+                    val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+                    
+                    // Save scan history
+                    val scanHistory = ScanHistory(
+                        userId = userId,
+                        type = ScanType.WEBSITE.name,
+                        target = normalizedUrl,
+                        result = scanRepository.determineScanResult(ScanType.WEBSITE, maliciousCount)
+                    )
+                    scanRepository.saveScanHistory(scanHistory)
+                    
+                    // Reload scan history after saving
+                    loadScanHistory(userId)
+                    
                     onResult(scanResult)
                 } else {
                     val errorCode = response.code()
-                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                    Log.e(TAG, "Error scanning URL: $normalizedUrl. Code: $errorCode, Error: $errorBody")
+                    response.errorBody()?.string() ?: "Unknown error"
                     onResult("Error submitting URL. HTTP Status: $errorCode")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception during URL scan: $normalizedUrl", e)
                 onResult("Error: ${e.message ?: "Unknown error occurred"}")
             }
         }
     }
-
 
     private fun normalizeUrl(input: String): String {
         var url = input.trim()
@@ -142,7 +180,6 @@ class ScanViewModel : ViewModel() {
 
             while (attempts < maxAttempts) {
                 attempts++
-                Log.d(TAG, "Checking scan result, attempt $attempts of $maxAttempts")
 
                 try {
                     val response = apiService.getScanReport(apiKey, analysisId)
@@ -151,8 +188,6 @@ class ScanViewModel : ViewModel() {
                         val attributes = response.body()?.data?.attributes
                         val status = attributes?.status ?: "unknown"
                         lastStatus = status
-
-                        Log.d(TAG, "Current scan status: $status")
 
                         // Chờ đến khi scan hoàn tất
                         if (status != "completed") {
@@ -202,19 +237,15 @@ class ScanViewModel : ViewModel() {
                                 }
                             }
 
-                            Log.d(TAG, "Final scan result:\n$result")
                             return@withTimeoutOrNull result
                         } else {
-                            Log.d(TAG, "Not enough engines scanned yet. Scanned: $scannedEngines/$totalEngines")
                             delay(delayBetweenAttemptsMs)
                             continue
                         }
                     } else {
-                        Log.e(TAG, "Error fetching scan report. HTTP ${response.code()}")
                         delay(delayBetweenAttemptsMs)
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Exception while checking scan result", e)
                     delay(delayBetweenAttemptsMs)
                 }
             }
@@ -222,5 +253,4 @@ class ScanViewModel : ViewModel() {
             return@withTimeoutOrNull "Scan did not complete in $maxAttempts attempts. Last status: $lastStatus"
         } ?: "Scan timed out after waiting ${totalTimeout / 1000} seconds."
     }
-
 }

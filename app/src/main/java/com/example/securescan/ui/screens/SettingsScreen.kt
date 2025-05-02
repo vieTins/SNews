@@ -17,21 +17,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FontDownload
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -47,7 +54,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,11 +67,11 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.securescan.data.models.User
+import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.AuthViewModel
 import com.example.securescan.viewmodel.ThemeViewModel
 import com.example.securescan.viewmodel.UserViewModel
-import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SettingsScreen(
@@ -78,7 +84,6 @@ fun SettingsScreen(
     val user by viewModel.user
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val scrollState = rememberScrollState()
-    val currentUser = FirebaseAuth.getInstance().currentUser
 
     Box(
         modifier = Modifier
@@ -90,58 +95,13 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Top app bar - cố định
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Settings icon
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                    ),
-                                    radius = 20f
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings Icon",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+            // Top app bar
+            AppTopBar(
+                title = "Cài đặt",
+                navigationIcon = Icons.Default.Settings,
+                actionIcon = Icons.Default.MoreVert
+            )
 
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Title
-                    Text(
-                        text = "Cài đặt",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
 
             // User profile section
             UserProfileSection(navController, user)
@@ -155,6 +115,17 @@ fun SettingsScreen(
                     title = "Chế độ tối",
                     isChecked = isDarkMode,
                     onCheckedChange = {
+                        themeViewModel.toggleTheme()
+                    }
+                )
+
+                SettingsToggleItem(
+                    icon = Icons.Default.RemoveRedEye,
+                    title = "Bảo vệ mắt",
+                    //isEyeProtectionEnabled = isEyeProtectionEnabled,
+                    isChecked = isDarkMode,
+                    onCheckedChange = {
+                        //.toggleEyeProtection()
                         themeViewModel.toggleTheme()
                     }
                 )
@@ -178,13 +149,49 @@ fun SettingsScreen(
                     title = "Điều khoản và thỏa thuận sử dụng",
                     onClick = { /* Xử lý khi click vào điều khoản */ }
                 )
+
+                SettingsItem(
+                    icon = Icons.Default.Star,
+                    title = "Đánh giá ứng dụng",
+                    onClick = { /* Xử lý khi click vào điều khoản */ }
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
+
+            SettingsCategory(title = "Cài đặt khác") {
+                SettingsItem(
+                    icon = Icons.Default.Language,
+                    title = "Ngôn ngữ",
+                    onClick = { /* Xử lý khi click vào câu hỏi thường gặp */ }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.FontDownload,
+                    title = "Cỡ chữ",
+                    onClick = { /* Xử lý khi click vào giới thiệu */ }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Thông báo",
+                    onClick = { /* Xử lý khi click vào điều khoản */ }
+                )
+
+                SettingsItem(
+                    icon = Icons.Default.Security,
+                    title = "Mật khẩu",
+                    onClick = { /* Xử lý khi click vào điều khoản */ }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+
+
             // Logout button
             LogoutButton(
-                authViewModel = authViewModel,
                 onLogout = onLogout
             )
 
@@ -368,7 +375,7 @@ fun SettingsItem(
         )
     }
 
-    Divider(
+    HorizontalDivider(
         modifier = Modifier.padding(start = 56.dp, end = 16.dp),
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
     )
@@ -414,7 +421,7 @@ fun SettingsToggleItem(
         )
     }
 
-    Divider(
+    HorizontalDivider(
         modifier = Modifier.padding(start = 56.dp, end = 16.dp),
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
     )
@@ -422,7 +429,6 @@ fun SettingsToggleItem(
 
 @Composable
 fun LogoutButton(
-    authViewModel: AuthViewModel,
     onLogout: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -464,7 +470,7 @@ fun LogoutButton(
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
-                imageVector = Icons.Default.Logout,
+                imageVector = Icons.AutoMirrored.Filled.Logout,
                 contentDescription = "Logout",
                 modifier = Modifier.size(20.dp)
             )

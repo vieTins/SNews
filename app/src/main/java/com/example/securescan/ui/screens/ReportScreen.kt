@@ -5,51 +5,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Report
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -59,22 +27,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.securescan.data.models.ReportItem
+import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.viewmodel.ReportsViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ReportScreen(viewModel: ReportsViewModel) {
-    // State for form fields
+fun ReportScreen(
+    viewModel: ReportsViewModel,
+    onNavigateBack: () -> Unit
+) {
     var reportType by remember { mutableStateOf("url") }
-    var inputValue by remember { mutableStateOf("") }
+    var target by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
     var submitSuccess by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    val scrollState = rememberScrollState()
-
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var target by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val email = currentUser?.email ?: "anonymous"
@@ -97,62 +66,11 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            // Top Bar
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 4.dp
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primaryContainer
-                                )
-                            )
-                        )
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                        ),
-                                        radius = 20f
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Report,
-                                contentDescription = "Report Icon",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Text(
-                            text = "Báo cáo",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
+            AppTopBar(
+                title = "Báo cáo",
+                navigationIcon = Icons.Default.ArrowBackIosNew,
+                onNavigationClick = onNavigateBack
+            )
 
             // Main Content
             Column(
@@ -160,10 +78,13 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
+                // Header Card
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -204,7 +125,9 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -254,7 +177,9 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 ) {
                     Column(
                         modifier = Modifier
@@ -393,8 +318,6 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         if (errorMessage.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -424,7 +347,7 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                                         onSuccess = {
                                             isSubmitting = false
                                             submitSuccess = true
-                                            inputValue = ""
+                                            target = ""
                                             description = ""
                                         },
                                         onFailure = { exception ->
@@ -466,8 +389,6 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
             }
         }
 
@@ -479,7 +400,7 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                     .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
                     .clickable {
                         submitSuccess = false
-                        inputValue = ""
+                        target = ""
                         description = ""
                     },
                 contentAlignment = Alignment.Center
@@ -487,7 +408,9 @@ fun ReportScreen(viewModel: ReportsViewModel) {
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
                         .padding(16.dp)
@@ -618,7 +541,7 @@ fun validateInput(input: String, type: String): Boolean {
             input.matches(urlPattern.toRegex())
         }
         "phone" -> {
-            val phonePattern = "^(0|\\+84)(3|5|7|8|9)\\d{8}$"
+            val phonePattern = "^(0|\\+84)([35789])\\d{8}$"
             input.matches(phonePattern.toRegex())
         }
         "card" -> {

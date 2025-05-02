@@ -401,12 +401,12 @@ fun NewsListHeader(title: String, onViewAllClick: () -> Unit) {
 
 @Composable
 fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
-    val timestampString = newsItem?.date
-    val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
+    val timestampString = newsItem.date
+    val timestamp = timestampString.toLongOrNull() ?: 0L
 
     val date = Date(timestamp)
 
-    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
     val formattedDate = formatter.format(date)
     Card(
         modifier = Modifier
@@ -414,7 +414,7 @@ fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable { onNewsClick(newsItem.id) },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

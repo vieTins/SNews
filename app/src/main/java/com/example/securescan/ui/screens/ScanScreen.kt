@@ -7,92 +7,61 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Upload
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.securescan.R
-import com.example.securescan.ui.theme.ErrorRed
+import com.example.securescan.data.models.ScanHistory
+import com.example.securescan.data.models.ScanResult
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.theme.*
 import com.example.securescan.viewmodel.ScanViewModel
+import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-// Định nghĩa model cho lịch sử quét
-data class ScanHistoryItem(
-    val target: String,
-    val result: Boolean, // true = lừa đảo, false = chưa có trong danh sách
-    val timestamp: Long = System.currentTimeMillis()
-)
+import java.util.regex.Pattern
 
 @Composable
-fun ScanScreen(viewModel: ScanViewModel) {
+fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    
+    val background = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF2A5298).copy(alpha = 0.05f),
+            Color(0xFF5E7CE2).copy(alpha = 0.02f)
+        )
+    )
 
     // State variables
     var url by remember { mutableStateOf("") }
@@ -101,15 +70,19 @@ fun ScanScreen(viewModel: ScanViewModel) {
     var selectedScanType by remember { mutableStateOf("URL") }
     var isScanning by remember { mutableStateOf(false) }
     var scanComplete by remember { mutableStateOf(false) }
-    var scanResult by remember { mutableStateOf<Boolean?>(null) } // null = chưa quét, true = lừa đảo, false = an toàn
+    var scanResult by remember { mutableStateOf<Boolean?>(null) }
     var currentScanTarget by remember { mutableStateOf("") }
     var showHistory by remember { mutableStateOf(false) }
     var scanResultText by remember { mutableStateOf("") }
+    var inputError by remember { mutableStateOf<String?>(null) }
 
-    val showResults = remember { mutableStateOf(true) }
-
-    // Giả lập lịch sử quét
-    var scanHistory by remember { mutableStateOf(listOf<ScanHistoryItem>()) }
+    // Validation patterns
+    val urlPattern = Pattern.compile(
+        "^(https?://)?([\\w-]+\\.)+[\\w-]+(/[\\w-./?%&=]*)?$"
+    )
+    val ipPattern = Pattern.compile(
+        "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    )
 
     // File picker launcher
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -120,27 +93,43 @@ fun ScanScreen(viewModel: ScanViewModel) {
             filePathFromUri?.let { path ->
                 filePath = path
                 selectedFileName = path.split("/").last()
+                inputError = null
             } ?: run {
                 Toast.makeText(context, "Không thể đọc file đã chọn", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    // Load scan history when screen is first displayed
+    LaunchedEffect(Unit) {
+        currentUser?.uid?.let { userId ->
+            viewModel.loadScanHistory(userId)
+        }
+    }
+
+    // Collect scan history from ViewModel
+    val scanHistory by viewModel.scanHistory.collectAsState()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(brush = background)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
-            ScanTopBar()
+            // Custom App Bar
+            AppTopBar(
+                title = "Quét an toàn",
+                navigationIcon = Icons.Default.ArrowBackIosNew,
+                onNavigationClick = { navController.navigateUp() },
+                actionIcon = Icons.Default.History,
+                onActionIconClick = { showHistory = !showHistory }
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier
@@ -162,7 +151,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     text = "Quét ngay địa chỉ website, tệp tin hoặc IP để bảo vệ bạn khỏi các mối đe dọa lừa đảo.",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.primary
+                    color = DeepBlue
                 )
             }
 
@@ -172,7 +161,9 @@ fun ScanScreen(viewModel: ScanViewModel) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(4.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -181,7 +172,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
                         text = "Chọn đối tượng cần quét",
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DeepBlue
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -194,16 +185,17 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 selectedScanType = "URL"
                                 scanComplete = false
                                 scanResult = null
+                                url = ""
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selectedScanType == "URL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = if (selectedScanType == "URL") DeepBlue else MaterialTheme.colorScheme.surfaceVariant
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 "URL/Domain/IP",
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = if (selectedScanType == "URL") White else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -215,16 +207,18 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 selectedScanType = "File"
                                 scanComplete = false
                                 scanResult = null
+                                filePath = ""
+                                selectedFileName = ""
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (selectedScanType == "File") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = if (selectedScanType == "File") DeepBlue else MaterialTheme.colorScheme.surfaceVariant
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 "Tệp tin",
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = if (selectedScanType == "File") White else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -238,7 +232,9 @@ fun ScanScreen(viewModel: ScanViewModel) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(4.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -248,7 +244,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             text = "Nhập đường dẫn cần kiểm tra",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = DeepBlue
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -259,17 +255,49 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 url = it
                                 scanComplete = false
                                 scanResult = null
+                                inputError = null
                             },
                             placeholder = { Text("URL, domain, IP address...") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Uri,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = { focusManager.clearFocus() }
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
+                            trailingIcon = {
+                                if (url.isNotEmpty()) {
+                                    IconButton(onClick = { 
+                                        url = ""
+                                        scanComplete = false
+                                        scanResult = null
+                                        inputError = null
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear",
+                                            tint = DeepBlue
+                                        )
+                                    }
+                                }
+                            },
+                            isError = inputError != null,
+                            supportingText = {
+                                if (inputError != null) {
+                                    Text(
+                                        text = inputError!!,
+                                        color = ErrorRed
+                                    )
+                                }
+                            },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedBorderColor = DeepBlue,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                cursorColor = MaterialTheme.colorScheme.primary,
+                                cursorColor = DeepBlue,
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
@@ -279,7 +307,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             text = "Chọn tệp tin cần kiểm tra",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = DeepBlue
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -300,12 +328,28 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 modifier = Modifier.weight(1f),
                                 maxLines = 1,
                                 singleLine = true,
+                                trailingIcon = {
+                                    if (filePath.isNotEmpty() || selectedFileName.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                filePath = ""
+                                                selectedFileName = ""
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Clear",
+                                                tint = DeepBlue
+                                            )
+                                        }
+                                    }
+                                },
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedBorderColor = DeepBlue,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                    cursorColor = DeepBlue,
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                 )
@@ -316,13 +360,13 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             FilledIconButton(
                                 onClick = { filePickerLauncher.launch("*/*") },
                                 colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
+                                    containerColor = DeepBlue
                                 )
                             ) {
                                 Icon(
                                     Icons.Filled.Upload,
                                     contentDescription = "Chọn File",
-                                    tint = MaterialTheme.colorScheme.onPrimary
+                                    tint = White
                                 )
                             }
                         }
@@ -330,259 +374,168 @@ fun ScanScreen(viewModel: ScanViewModel) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            if (selectedScanType == "URL" && url.isNotEmpty()) {
-                                isScanning = true
-                                currentScanTarget = url
-                                viewModel.scanUrl(url) { result ->
-                                    if(result.contains("Scan completed")) {
-                                        scanComplete = true
-                                        isScanning = false
-                                        scanResultText = result
-                                        val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
-                                        val match = maliciousRegex.find(result)
-                                        val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
-                                        val isMalicious = maliciousCount > 0
-                                        scanResult = isMalicious
-                                        val newHistoryItem = ScanHistoryItem(currentScanTarget, isMalicious)
-                                        scanHistory = listOf(newHistoryItem) + scanHistory
-                                    } else {
-                                        scanComplete = false
-                                        isScanning = true
-                                    }
-                                }
-                            } else if (selectedScanType == "File" && filePath.isNotEmpty()) {
-                                isScanning = true
-                                currentScanTarget = selectedFileName.ifEmpty { filePath }
-                                viewModel.scanFile(filePath) { result ->
-                                    if (result.contains("Scan completed")) {
-                                        scanComplete = true
-                                        isScanning = false
-                                        scanResultText = result
-                                        val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
-                                        val match = maliciousRegex.find(result)
-                                        val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
-                                        val isMalicious = maliciousCount > 0
-                                        scanResult = isMalicious
-                                        val newHistoryItem = ScanHistoryItem(currentScanTarget, isMalicious)
-                                        scanHistory = listOf(newHistoryItem) + scanHistory
-                                    } else {
-                                        scanComplete = false
-                                        isScanning = true
-                                    }
-                                }
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    if (selectedScanType == "URL") "Vui lòng nhập URL/Domain/IP" else "Vui lòng chọn tệp tin",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        enabled = !isScanning &&
-                                ((selectedScanType == "URL" && url.isNotEmpty()) ||
-                                        (selectedScanType == "File" && filePath.isNotEmpty()))
-                    ) {
-                        Text(
-                            text = "Quét ngay",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Scan result card
-            if (isScanning || scanComplete) {
-                AnimatedVisibility(
-                    visible = isScanning || scanComplete,
-                    enter = fadeIn(animationSpec = tween(400)) + expandVertically(animationSpec = tween(400)),
-                    exit = fadeOut(animationSpec = tween(300)) + shrinkVertically(animationSpec = tween(300))
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        shape = RoundedCornerShape(16.dp),
+                    // Scan button with result overlay
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
+                            .height(56.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                        if (scanComplete) {
+                            // Result overlay
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (scanResult == true) 
+                                        ErrorRed.copy(alpha = 0.1f) 
+                                    else 
+                                        Color(0xFF81C784).copy(alpha = 0.1f)
+                                ),
+                                elevation = CardDefaults.cardElevation(6.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxSize()
                             ) {
-                                Text(
-                                    text = "Kết quả quét",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 20.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                IconButton(
-                                    onClick = { showResults.value = !showResults.value }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Icon(
-                                        imageVector = if (showResults.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                        contentDescription = "Toggle Results",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (scanResult == true) 
+                                                Icons.Default.Warning 
+                                            else 
+                                                Icons.Default.Check,
+                                            contentDescription = "Result Icon",
+                                            tint = if (scanResult == true) 
+                                                ErrorRed 
+                                            else 
+                                                Color(0xFF81C784),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Text(
+                                            text = if (scanResult == true) 
+                                                "LỪA ĐẢO" 
+                                            else 
+                                                "CHƯA CÓ THÔNG TIN",
+                                            color = if (scanResult == true) 
+                                                ErrorRed 
+                                            else 
+                                                Color(0xFF81C784),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
-
-                            AnimatedVisibility(
-                                visible = showResults.value,
-                                enter = fadeIn(animationSpec = tween(300)) + expandVertically(animationSpec = tween(300)),
-                                exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(200))
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Spacer(modifier = Modifier.height(20.dp))
-
-                                    when {
-                                        isScanning -> {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .wrapContentHeight(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(vertical = 16.dp)
-                                                ) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(100.dp)
-                                                            .clip(RoundedCornerShape(50.dp))
-                                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        CircularProgressIndicator(
-                                                            color = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(60.dp),
-                                                            strokeWidth = 4.dp
-                                                        )
-                                                    }
-
-                                                    Spacer(modifier = Modifier.height(24.dp))
-
-                                                    Text(
-                                                        text = "Đang kiểm tra ${if (selectedScanType == "URL") "địa chỉ" else "tệp tin"}...",
-                                                        fontSize = 16.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        textAlign = TextAlign.Center
-                                                    )
-
-                                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                                    LinearProgressIndicator(
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier
-                                                            .width(200.dp)
-                                                            .height(6.dp)
-                                                            .clip(RoundedCornerShape(3.dp))
-                                                    )
-                                                }
+                        } else {
+                            // Normal scan button
+                            Button(
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    
+                                    if (currentUser == null) {
+                                        Toast.makeText(context, "Vui lòng đăng nhập để sử dụng tính năng này", Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    
+                                    if (selectedScanType == "URL") {
+                                        if (url.isEmpty()) {
+                                            inputError = "Vui lòng nhập URL/Domain/IP"
+                                            return@Button
+                                        }
+                                        
+                                        if (!urlPattern.matcher(url).matches() && !ipPattern.matcher(url).matches()) {
+                                            inputError = "URL/Domain/IP không hợp lệ"
+                                            return@Button
+                                        }
+                                        
+                                        isScanning = true
+                                        currentScanTarget = url
+                                        viewModel.scanUrl(url, currentUser.uid) { result ->
+                                            if(result.contains("Scan completed")) {
+                                                scanComplete = true
+                                                isScanning = false
+                                                scanResultText = result
+                                                val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                                                val match = maliciousRegex.find(result)
+                                                val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+                                                val isMalicious = maliciousCount > 0
+                                                scanResult = isMalicious
+                                                
+                                                // Refresh scan history after successful scan
+                                                viewModel.loadScanHistory(currentUser.uid)
+                                                showHistory = true // Automatically show history after scan
+                                            } else {
+                                                scanComplete = false
+                                                isScanning = true
                                             }
                                         }
+                                    } else if (selectedScanType == "File") {
+                                        if (filePath.isEmpty()) {
+                                            inputError = "Vui lòng chọn tệp tin"
+                                            return@Button
+                                        }
 
-                                        scanComplete -> {
-                                            val backgroundColor = if (scanResult == true) ErrorRed.copy(alpha = 0.1f) else Green.copy(alpha = 0.1f)
-                                            val iconTint = if (scanResult == true) ErrorRed else Green
-                                            val resultIcon = if (scanResult == true) Icons.Default.Warning else Icons.Default.Check
-                                            val resultText = if (scanResult == true) "LỪA ĐẢO" else "CHƯA CÓ THÔNG TIN"
-                                            val resultColor = if (scanResult == true) ErrorRed else Green
+                                        val file = File(filePath)
+                                        if (!file.exists()) {
+                                            inputError = "File không tồn tại"
+                                            return@Button
+                                        }
 
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(100.dp)
-                                                    .clip(RoundedCornerShape(50.dp))
-                                                    .background(backgroundColor),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = resultIcon,
-                                                    contentDescription = "Result Icon",
-                                                    tint = iconTint,
-                                                    modifier = Modifier.size(50.dp)
-                                                )
-                                            }
-
-                                            Spacer(modifier = Modifier.height(16.dp))
-
-                                            Text(
-                                                text = resultText,
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = resultColor
-                                            )
-
-                                            Spacer(modifier = Modifier.height(8.dp))
-
-                                            Text(
-                                                text = currentScanTarget,
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                textAlign = TextAlign.Center,
-                                                modifier = Modifier.padding(horizontal = 16.dp)
-                                            )
-
-                                            Spacer(modifier = Modifier.height(20.dp))
-
-                                            Card(
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = if (scanResult == true) ErrorRed.copy(alpha = 0.08f) else Green.copy(alpha = 0.08f)
-                                                ),
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.fillMaxWidth()
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(16.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        imageVector = if (scanResult == true) Icons.Default.Info else Icons.Default.Info,
-                                                        contentDescription = "Information",
-                                                        tint = if (scanResult == true) ErrorRed else Green,
-                                                        modifier = Modifier.size(24.dp)
-                                                    )
-
-                                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                                    Text(
-                                                        text = if (scanResult == true)
-                                                            "Đây là ${if (selectedScanType == "URL") "địa chỉ" else "tệp tin"} lừa đảo. Bạn không nên truy cập hoặc sử dụng nó."
-                                                        else
-                                                            "${if (selectedScanType == "URL") "Địa chỉ" else "Tệp tin"} này chưa có trong danh sách lừa đảo, nhưng hãy luôn cẩn thận.",
-                                                        fontSize = 14.sp,
-                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                        modifier = Modifier.weight(1f)
-                                                    )
-                                                }
+                                        if (file.length() > 32 * 1024 * 1024) { // 32MB limit
+                                            inputError = "File quá lớn (giới hạn 32MB)"
+                                            return@Button
+                                        }
+                                        
+                                        isScanning = true
+                                        currentScanTarget = selectedFileName.ifEmpty { filePath }
+                                        viewModel.scanFile(filePath, currentUser.uid) { result ->
+                                            if (result.contains("Scan completed")) {
+                                                scanComplete = true
+                                                isScanning = false
+                                                scanResultText = result
+                                                val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
+                                                val match = maliciousRegex.find(result)
+                                                val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
+                                                val isMalicious = maliciousCount > 0
+                                                scanResult = isMalicious
+                                                
+                                                // Refresh scan history after successful scan
+                                                viewModel.loadScanHistory(currentUser.uid)
+                                                showHistory = true // Automatically show history after scan
+                                            } else {
+                                                scanComplete = false
+                                                isScanning = true
                                             }
                                         }
                                     }
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = DeepBlue
+                                ),
+                                enabled = !isScanning &&
+                                        ((selectedScanType == "URL" && url.isNotEmpty()) ||
+                                                (selectedScanType == "File" && filePath.isNotEmpty()))
+                            ) {
+                                if (isScanning) {
+                                    CircularProgressIndicator(
+                                        color = White,
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Quét ngay",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = White
+                                    )
                                 }
                             }
                         }
@@ -596,7 +549,9 @@ fun ScanScreen(viewModel: ScanViewModel) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(4.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -604,7 +559,14 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showHistory = !showHistory },
+                            .clickable { 
+                                showHistory = !showHistory
+                                if (showHistory) {
+                                    currentUser?.uid?.let { userId ->
+                                        viewModel.loadScanHistory(userId)
+                                    }
+                                }
+                            },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -612,13 +574,13 @@ fun ScanScreen(viewModel: ScanViewModel) {
                             text = "Lịch sử quét",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = DeepBlue
                         )
 
                         Icon(
                             imageVector = if (showHistory) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                             contentDescription = "Toggle History",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = DeepBlue
                         )
                     }
 
@@ -641,13 +603,14 @@ fun ScanScreen(viewModel: ScanViewModel) {
                                 )
                             }
                         } else {
-                            LazyColumn(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(max = 300.dp)
+                                    .heightIn(min = 200.dp, max = 500.dp)
+                                    .verticalScroll(rememberScrollState())
                                     .padding(top = 8.dp)
                             ) {
-                                items(scanHistory) { item ->
+                                scanHistory.forEach { item ->
                                     ScanHistoryItemCard(item)
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
@@ -656,50 +619,25 @@ fun ScanScreen(viewModel: ScanViewModel) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-fun ScanTopBar() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primaryContainer
-                        )
-                    )
-                )
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "QUÉT AN TOÀN",
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun ScanHistoryItemCard(item: ScanHistoryItem) {
+fun ScanHistoryItemCard(item: ScanHistory) {
     val dateFormat = SimpleDateFormat("HH:mm:ss dd/MM/yyyy", Locale.getDefault())
     val formattedDate = dateFormat.format(Date(item.timestamp))
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (item.result) ErrorRed.copy(alpha = 0.05f) else Green.copy(alpha = 0.05f)
+            containerColor = when (item.result) {
+                ScanResult.FRAUD.name -> ErrorRed.copy(alpha = 0.05f)
+                ScanResult.DANGEROUS.name -> ErrorRed.copy(alpha = 0.05f)
+                ScanResult.SUSPICIOUS.name -> Color(0xFFFFA726).copy(alpha = 0.05f)
+                else -> Color(0xFF81C784).copy(alpha = 0.05f)
+            }
         ),
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth()
@@ -714,13 +652,28 @@ fun ScanHistoryItemCard(item: ScanHistoryItem) {
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (item.result) ErrorRed.copy(alpha = 0.2f) else Green.copy(alpha = 0.2f)),
+                        .background(
+                            when (item.result) {
+                                ScanResult.FRAUD.name -> ErrorRed.copy(alpha = 0.2f)
+                                ScanResult.DANGEROUS.name -> ErrorRed.copy(alpha = 0.2f)
+                                ScanResult.SUSPICIOUS.name -> Color(0xFFFFA726).copy(alpha = 0.2f)
+                                else -> Color(0xFF81C784).copy(alpha = 0.2f)
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (item.result) Icons.Default.Warning else Icons.Default.Check,
+                        imageVector = when (item.result) {
+                            ScanResult.FRAUD.name, ScanResult.DANGEROUS.name -> Icons.Default.Warning
+                            ScanResult.SUSPICIOUS.name -> Icons.Default.Warning
+                            else -> Icons.Default.Check
+                        },
                         contentDescription = "Result Icon",
-                        tint = if (item.result) ErrorRed else Green,
+                        tint = when (item.result) {
+                            ScanResult.FRAUD.name, ScanResult.DANGEROUS.name -> ErrorRed
+                            ScanResult.SUSPICIOUS.name -> Color(0xFFFFA726)
+                            else -> Color(0xFF81C784)
+                        },
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -729,7 +682,7 @@ fun ScanHistoryItemCard(item: ScanHistoryItem) {
 
                 Column {
                     Text(
-                        text = "Địa chỉ website/file/url/IP:",
+                        text = "Loại quét: ${item.type}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -757,13 +710,19 @@ fun ScanHistoryItemCard(item: ScanHistoryItem) {
                     )
 
                     Text(
-                        text = if (item.result)
-                            "Website/IP/domain/file lừa đảo"
-                        else
-                            "Chưa có trong danh sách lừa đảo",
+                        text = when (item.result) {
+                            ScanResult.FRAUD.name -> "Lừa đảo"
+                            ScanResult.DANGEROUS.name -> "Nguy hiểm"
+                            ScanResult.SUSPICIOUS.name -> "Nghi ngờ"
+                            else -> "Không có thông tin"
+                        },
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (item.result) ErrorRed else Green
+                        color = when (item.result) {
+                            ScanResult.FRAUD.name, ScanResult.DANGEROUS.name -> ErrorRed
+                            ScanResult.SUSPICIOUS.name -> Color(0xFFFFA726)
+                            else -> Color(0xFF81C784)
+                        }
                     )
                 }
 
@@ -775,10 +734,11 @@ fun ScanHistoryItemCard(item: ScanHistoryItem) {
                     )
 
                     Text(
-                        text = if (item.result)
-                            "Bạn không nên truy cập vào nó"
-                        else
-                            "Hãy báo cáo ngay khi có nghi ngờ",
+                        text = when (item.result) {
+                            ScanResult.FRAUD.name, ScanResult.DANGEROUS.name -> "Không nên truy cập"
+                            ScanResult.SUSPICIOUS.name -> "Cần thận trọng"
+                            else -> "Có thể truy cập"
+                        },
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
