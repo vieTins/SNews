@@ -7,7 +7,19 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -15,10 +27,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DataThresholding
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,11 +69,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.securescan.data.models.User
 import com.example.securescan.ui.components.AppTopBar
-import com.example.securescan.ui.theme.*
+import com.example.securescan.ui.theme.FunctionGreen
+import com.example.securescan.ui.theme.FunctionOrange
+import com.example.securescan.ui.theme.FunctionOrangeDark
+import com.example.securescan.ui.theme.FunctionPurple
+import com.example.securescan.ui.theme.FunctionPurpleDark
+import com.example.securescan.ui.theme.FunctionTeal
+import com.example.securescan.ui.theme.FunctionTealDark
+import com.example.securescan.ui.theme.SurfaceLight
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -483,6 +529,12 @@ fun NewsSection(navController: NavController) {
 
 @Composable
 fun NewsItem(title: String, date: String, accentColor: Color, onClick: () -> Unit = {}) {
+
+    val timestamp = date.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
+    val date1 = Date(timestamp)
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val formattedDate = formatter.format(date1)
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -521,7 +573,7 @@ fun NewsItem(title: String, date: String, accentColor: Color, onClick: () -> Uni
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = date,
+                    text = formattedDate,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

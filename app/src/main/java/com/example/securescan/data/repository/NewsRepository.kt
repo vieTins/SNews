@@ -41,7 +41,7 @@ class NewsRepository {
                         title = data["title"] as? String ?: "",
                         summary = data["summary"] as? String ?: "",
                         date = data["date"] as? String ?: "",
-                        imageRes = data["image"] as? String ?: "",
+                        imageRes = data["imageRes"] as? String ?: "",
                         tag = data["tag"] as? String ?: "",
                         tagColor = data["tagColor"] as? String ?: "",
                         readTime = (data["readTime"] as? Long)?.toInt() ?: 0,

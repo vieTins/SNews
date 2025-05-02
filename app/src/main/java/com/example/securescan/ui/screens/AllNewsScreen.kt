@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
@@ -33,12 +34,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,8 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.securescan.data.models.NewsItem
-import com.example.securescan.ui.theme.BackgroundColor
-import com.example.securescan.ui.theme.DeepBlue
+import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.theme.White
 import com.example.securescan.viewmodel.NewsViewModel
 
@@ -88,50 +88,34 @@ fun AllNewsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
             // Top App Bar
-            TopAppBar(
-                title = {
-                    if (!showSearchBar) {
-                        Text(
-                            text = "Tất cả tin tức",
-                            color = White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepBlue
-                ),
-                actions = {
-                    // Search Icon
-                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
-                        Icon(
-                            imageVector = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = White
-                        )
-                    }
-                    // Filter Icon
-                    IconButton(onClick = { showFilterDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filter",
-                            tint = White
-                        )
-                    }
-                    // Sort Icon
-                    IconButton(onClick = { showSortDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Sort,
-                            contentDescription = "Sort",
-                            tint = White
-                        )
+            AppTopBar(
+                title = "Tất cả tin tức",
+                navigationIcon = Icons.Default.ArrowBackIosNew,
+                onNavigationClick = { navController.popBackStack() },
+                actionIcon = if (showSearchBar) Icons.Default.Close else Icons.Default.Search,
+                onActionIconClick = { showSearchBar = !showSearchBar },
+                trailingContent = {
+                    Row {
+                        IconButton(onClick = { showFilterDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = "Filter",
+                                tint = White
+                            )
+                        }
+                        IconButton(onClick = { showSortDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Sort,
+                                contentDescription = "Sort",
+                                tint = White
+                            )
+                        }
                     }
                 }
             )
@@ -151,7 +135,8 @@ fun AllNewsScreen(
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     trailingIcon = {
@@ -159,13 +144,18 @@ fun AllNewsScreen(
                             IconButton(onClick = { searchQuery = "" }) {
                                 Icon(
                                     imageVector = Icons.Default.Clear,
-                                    contentDescription = "Clear"
+                                    contentDescription = "Clear",
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    )
                 )
             }
 
@@ -209,19 +199,30 @@ fun AllNewsScreen(
                                     onClick = {
                                         selectedFilter = index
                                         showFilterDialog = false
-                                    }
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.primary,
+                                        unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(filter)
+                                Text(
+                                    text = filter,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { showFilterDialog = false }) {
-                        Text("Đóng")
+                        Text(
+                            text = "Đóng",
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
+                },
+                containerColor = MaterialTheme.colorScheme.surface
             )
         }
 
@@ -242,34 +243,44 @@ fun AllNewsScreen(
                             ) {
                                 RadioButton(
                                     selected = false,
-                                    onClick = { showSortDialog = false }
+                                    onClick = { showSortDialog = false },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.primary,
+                                        unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(sort)
+                                Text(
+                                    text = sort,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { showSortDialog = false }) {
-                        Text("Đóng")
+                        Text(
+                            text = "Đóng",
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                }
+                },
+                containerColor = MaterialTheme.colorScheme.surface
             )
         }
     }
 }
 
-
 @Composable
-fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
+fun NewsCard(newsItem: NewsItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -307,7 +318,7 @@ fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
                     text = newsItem.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = DeepBlue,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -319,7 +330,7 @@ fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = null,
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.size(12.dp)
                     )
 
@@ -327,7 +338,7 @@ fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
 
                     Text(
                         text = newsItem.date,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontSize = 11.sp
                     )
 
@@ -336,7 +347,7 @@ fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = null,
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         modifier = Modifier.size(12.dp)
                     )
 
@@ -344,7 +355,7 @@ fun NewsCard(newsItem: NewsItem, onClick: () -> Unit){
 
                     Text(
                         text = "${newsItem.readTime} phút",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontSize = 11.sp
                     )
                 }

@@ -4,6 +4,7 @@ import com.example.securescan.data.models.CommentPost
 import com.example.securescan.data.models.LikePost
 import com.example.securescan.data.models.NewsItem
 import com.example.securescan.data.models.SharePost
+import com.example.securescan.data.models.BookmarkPost
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentReference
@@ -19,6 +20,7 @@ class NewsSocialRepository {
     private val commentsCollection = db.collection("comments")
     private val likesCollection = db.collection("reactions")
     private val sharesCollection = db.collection("shares")
+    private val bookmarksCollection = db.collection("bookmarks")
 
     // Hàm trợ giúp để lấy document reference từ postId (hỗ trợ cả string và int)
     private fun getPostRef(postId: String): DocumentReference {
@@ -341,5 +343,114 @@ class NewsSocialRepository {
                 onError(e)
             }
     }
+
+    fun toggleBookmark(postId: String, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            onError(Exception("User not logged in"))
+            return
+        }
+
+        bookmarksCollection
+            .whereEqualTo("postId", postId)
+            .whereEqualTo("userId", currentUser.uid)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.isEmpty) {
+                    // Add bookmark
+                        val bookmark = BookmarkPost(
+                            id = bookmarksCollection.document().id,
+                            timestamp = System.currentTimeMillis(),
+                            postId = postId,
+                            userId = currentUser.uid
+                        )
+                    bookmarksCollection.add(bookmark)
+                        .addOnSuccessListener { onSuccess() }
+                        .addOnFailureListener { e -> onError(e) }
+                } else {
+                    // Remove bookmark
+                    snapshot.documents.firstOrNull()?.reference?.delete()
+                        ?.addOnSuccessListener { onSuccess() }
+                        ?.addOnFailureListener { e -> onError(e) }
+                }
+            }
+            .addOnFailureListener { e -> onError(e) }
+    }
+
+    fun checkIfUserBookmarkedPost(postId: String, onResult: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            onResult(false)
+            return
+        }
+
+        bookmarksCollection
+            .whereEqualTo("postId", postId)
+            .whereEqualTo("userId", currentUser.uid)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                onResult(!snapshot.isEmpty)
+            }
+            .addOnFailureListener { e ->
+                Log.e("NewsSocialRepository", "Failed to check if bookmarked", e)
+                onResult(false)
+            }
+    }
+
+    fun getBookmarkedNews(
+        onSuccess: (List<NewsItem>) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            onError(Exception("User not logged in"))
+            return
+        }
+
+        bookmarksCollection
+            .whereEqualTo("userId", currentUser.uid)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val bookmarkedPostIds = snapshot.documents.mapNotNull { doc ->
+                    // Lấy postId từ field "id" trong mỗi document
+                    doc.getString("postId")
+                }
+                Log.d("Bookmark", "Bookmarked post IDs: $bookmarkedPostIds")
+                if (bookmarkedPostIds.isEmpty()) {
+                    onSuccess(emptyList())
+                    return@addOnSuccessListener
+                }
+
+                // Lấy tất cả bài viết đã đánh dấu
+                postsCollection
+                    .whereIn("id", bookmarkedPostIds)  // Sử dụng field "id" để truy vấn
+                    .get()
+                    .addOnSuccessListener { postsSnapshot ->
+                        val newsList = postsSnapshot.documents.mapNotNull { doc ->
+                            try {
+                                // Chuyển dữ liệu từ Firestore thành đối tượng NewsItem
+                                doc.toObject(NewsItem::class.java)?.copy(id = doc.getString("id") ?: "")
+                            } catch (e: Exception) {
+                                Log.e("NewsSocialRepository", "Error parsing news item", e)
+                                null
+                            }
+                        }
+                        Log.d("NewsSocialRepository", "Lấy được ${newsList}")
+                        onSuccess(newsList)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("NewsSocialRepository", "Error getting bookmarked posts", e)
+                        onError(e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("NewsSocialRepository", "Error getting bookmarks", e)
+                onError(e)
+            }
+    }
+
 
 }

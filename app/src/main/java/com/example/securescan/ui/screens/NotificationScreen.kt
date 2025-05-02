@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Notifications
@@ -36,6 +37,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -63,6 +65,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.securescan.data.models.NotificationItem
 import com.example.securescan.data.models.NotificationType
+import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.theme.AccentBlue
 import com.example.securescan.ui.theme.BackgroundColor
 import com.example.securescan.ui.theme.DeepBlue
@@ -109,18 +112,30 @@ fun NotificationScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
             // Top app bar
-            NotificationTopAppBar(
-                unreadCount = notifications.count { !it.isRead },
-                onMarkAllRead = {
+            AppTopBar(
+                title = "Thông báo",
+                navigationIcon = Icons.Default.ArrowBack,
+                onNavigationClick = { navController.popBackStack() },
+                actionIcon = Icons.Default.DoneAll,
+                onActionIconClick = {
                     viewModel.markAllAsRead()
                     snackbarMessage = "Đã đánh dấu tất cả là đã đọc"
                     showSnackbar = true
+                },
+                trailingContent = {
+                    if (notifications.count { !it.isRead } > 0) {
+                        Text(
+                            text = "${notifications.count { !it.isRead }} chưa đọc",
+                            color = White,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             )
 
@@ -210,88 +225,6 @@ fun NotificationScreen(
 }
 
 @Composable
-fun NotificationTopAppBar(unreadCount: Int, onMarkAllRead: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(DeepBlue, PrimaryBlue)
-                )
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Notification icon với hiệu ứng ánh sáng
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(LightBlue.copy(alpha = 0.8f), LightBlue.copy(alpha = 0.1f)),
-                                radius = 20f
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications Icon",
-                        tint = White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Title with unread count
-                Column {
-                    Text(
-                        text = "Thông báo",
-                        color = White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    if (unreadCount > 0) {
-                        Text(
-                            text = "$unreadCount thông báo chưa đọc",
-                            color = White.copy(alpha = 0.8f),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-
-            // Mark all as read button
-            if (unreadCount > 0) {
-                IconButton(
-                    onClick = onMarkAllRead,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(White.copy(alpha = 0.2f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DoneAll,
-                        contentDescription = "Đánh dấu tất cả đã đọc",
-                        tint = White
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun NotificationFilterOptions(
     selectedFilter: Int,
     onFilterSelected: (Int) -> Unit
@@ -304,8 +237,8 @@ fun NotificationFilterOptions(
             .fillMaxWidth()
             .padding(top = 8.dp),
         edgePadding = 16.dp,
-        containerColor = BackgroundColor,
-        contentColor = PrimaryBlue,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.primary,
         divider = {}
     ) {
         filters.forEachIndexed { index, filter ->
@@ -317,13 +250,19 @@ fun NotificationFilterOptions(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (selectedFilter == index) AccentBlue else White
+                        containerColor = if (selectedFilter == index) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier.padding(vertical = 8.dp)
                 ) {
                     Text(
                         text = filter,
-                        color = if (selectedFilter == index) White else Color.Gray,
+                        color = if (selectedFilter == index) 
+                            MaterialTheme.colorScheme.onPrimary 
+                        else 
+                            MaterialTheme.colorScheme.onSurface,
                         fontWeight = if (selectedFilter == index) FontWeight.Bold else FontWeight.Normal,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )

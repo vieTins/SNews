@@ -25,6 +25,8 @@ import androidx.navigation.navArgument
 import com.example.securescan.data.network.FirebaseAuthService
 import com.example.securescan.data.repository.FirebaseSeeder
 import com.example.securescan.ui.components.BottomNavigation
+import com.example.securescan.ui.screens.AllBookmarkScreen
+import com.example.securescan.ui.screens.AllNewsScreen
 import com.example.securescan.ui.screens.HomeScreen
 import com.example.securescan.ui.screens.LoginScreen
 import com.example.securescan.ui.screens.NewsDetailScreen
@@ -45,6 +47,7 @@ import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.ReportsViewModel
 import com.example.securescan.viewmodel.ScanPhoneCardViewModel
 import com.example.securescan.viewmodel.ScanViewModel
+import com.example.securescan.viewmodel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Suppress("UNREACHABLE_CODE")
@@ -53,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private val newsViewModel: NewsViewModel by viewModels()
     private val reportsViewModel: ReportsViewModel by viewModels()
     private val scanPhoneCardViewModel : ScanPhoneCardViewModel by viewModels()
+    private val themeViewModel: ThemeViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -152,7 +156,7 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0) { inclusive = true }
                                         }
                                     },
-                                    themeViewModel = TODO()
+                                    themeViewModel = themeViewModel
                                 )
                             }
                             composable("edit_profile") {
@@ -170,10 +174,25 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            composable("all_news") {
+                                AllNewsScreen(
+                                    navController = navController
+                                )
+                            }
+
                             composable("scan") {
                                 ScanScreen(viewModel = scanViewModel)
                             }
-                            composable("notifications") { NotificationScreen(navController) }
+                            composable("notifications") { 
+                                NotificationScreen(navController = navController) 
+                            }
+
+                            composable("bookmarks") {
+                                AllBookmarkScreen(
+                                    viewModel = newsViewModel,
+                                    navController = navController
+                                )
+                            }
 
                             composable(
                                 route = "news_detail/{postId}",
