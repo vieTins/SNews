@@ -56,6 +56,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth.ktx)
 
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
     implementation(libs.retrofit)
     implementation(libs.converter.gson)

@@ -1,25 +1,59 @@
 package com.example.securescan
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.securescan.data.network.FirebaseAuthService
 import com.example.securescan.ui.components.BottomNavigation
-import com.example.securescan.ui.screens.*
+import com.example.securescan.ui.screens.AllBookmarkScreen
+import com.example.securescan.ui.screens.AllNewsScreen
+import com.example.securescan.ui.screens.HomeScreen
+import com.example.securescan.ui.screens.LoginScreen
+import com.example.securescan.ui.screens.NewsDetailScreen
+import com.example.securescan.ui.screens.NewsScreen
+import com.example.securescan.ui.screens.NotificationScreen
+import com.example.securescan.ui.screens.PersonalInformationScreen
+import com.example.securescan.ui.screens.RegisterScreen
+import com.example.securescan.ui.screens.ReportDataScreen
+import com.example.securescan.ui.screens.ReportScreen
+import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
+import com.example.securescan.ui.screens.ScanScreen
+import com.example.securescan.ui.screens.SettingsScreen
+import com.example.securescan.ui.screens.WelcomeScreen
 import com.example.securescan.ui.theme.AppTheme
-import com.example.securescan.viewmodel.*
+import com.example.securescan.viewmodel.AuthViewModel
+import com.example.securescan.viewmodel.AuthViewModelFactory
+import com.example.securescan.viewmodel.NewsViewModel
+import com.example.securescan.viewmodel.ReportsViewModel
+import com.example.securescan.viewmodel.ScanPhoneCardViewModel
+import com.example.securescan.viewmodel.ScanViewModel
+import com.example.securescan.viewmodel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+@Suppress("DEPRECATION")
 class MainActivity : ComponentActivity() {
     private val scanViewModel: ScanViewModel by viewModels()
     private val newsViewModel: NewsViewModel by viewModels()
@@ -29,13 +63,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val authService = FirebaseAuthService()
-            val factory = AuthViewModelFactory(authService)
-            val viewModel: AuthViewModel = viewModel(factory = factory)
-
+            // Định nghĩa màu cho thanh trạng thái của điện thoại
             AppTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
+                val view = LocalView.current
+                val window = (view.context as Activity).window
+                val colorScheme = MaterialTheme.colorScheme
+                SideEffect { window.statusBarColor = colorScheme.primary.toArgb() }
 
+                val authService = FirebaseAuthService()
+                val factory = AuthViewModelFactory(authService)
+                val viewModel: AuthViewModel = viewModel(factory = factory)
+
+                Surface(color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route

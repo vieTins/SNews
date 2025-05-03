@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -41,13 +42,14 @@ fun AppTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(background)
-            .padding(16.dp)
+            .height(56.dp)
+            .padding(8.dp)
     ) {
         // Title luôn ở chính giữa Box
         Text(
             text = title,
             color = White,
-            fontSize = 20.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.Center)
         )
@@ -72,7 +74,7 @@ fun AppTopBar(
             if (leadingIconUrl != null) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(40.dp)
                         .clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -96,7 +98,7 @@ fun AppTopBar(
                     IconButton(onClick = { onActionIconClick?.invoke() }) {
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(40.dp)
                                 .clip(CircleShape),
                             contentAlignment = Alignment.Center
                         ) {

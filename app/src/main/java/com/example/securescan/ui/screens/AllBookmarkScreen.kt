@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,54 +18,44 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.securescan.R
 import com.example.securescan.data.models.NewsItem
 import com.example.securescan.ui.components.AppTopBar
-import com.example.securescan.ui.theme.DeepBlue
-import com.example.securescan.ui.theme.White
+import com.example.securescan.ui.components.NewsCard
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllBookmarkScreen(
     viewModel: NewsViewModel,
     navController: NavController
 ) {
     val bookmarkedNews by viewModel.bookmarkedNews.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -78,174 +67,182 @@ fun AllBookmarkScreen(
         ) {
             AppTopBar(
                 title = "Bài viết đã lưu",
-                navigationIcon = Icons.Default.ArrowBack,
+                navigationIcon = Icons.Default.ArrowBackIosNew,
                 onNavigationClick = { navController.popBackStack() }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // show image news5
-                Image(
-                    painter = painterResource(id = R.drawable.news6),
-                    contentDescription = "News",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Xem lại bài viết thú vị mà bạn đã lưu lại",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            BookmarkHeader()
 
             if (bookmarkedNews.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.BookmarkBorder,
-                            contentDescription = "No Bookmarks",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Chưa có bài viết nào được lưu",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
+                EmptyBookmarkState()
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(bookmarkedNews) { news ->
-                        BookmarkNewsItem(
-                            newsItem = news,
-                            onItemClick = {
-                                navController.navigate("news_detail/${news.id}")
-                            }
-                        )
-                    }
-                }
+
+                    BookmarkList(
+                        bookmarkedNews = bookmarkedNews,
+                        onNewsClick = { newsId ->
+                            navController.navigate("news_detail/$newsId")
+                        },
+                        onDeleteBookmark = { news ->
+                            viewModel.toggleBookmark(news.id)
+                        }
+                    )
             }
         }
     }
 }
 
 @Composable
-fun BookmarkNewsItem(newsItem: NewsItem, onItemClick: () -> Unit) {
-    val timestampString = newsItem?.date
-    val timestamp = timestampString?.toLongOrNull() ?: 0L
-    val date = Date(timestamp)
-    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    val formattedDate = formatter.format(date)
-
-    Card(
+private fun BookmarkHeader() {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable(onClick = onItemClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
+        Image(
+            painter = painterResource(id = R.drawable.news6),
+            contentDescription = "News",
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = "Xem lại những tin tức thú vị mà bạn đã lưu lại",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Normal,
+            color = baseBlue3
+        )
+    }
+}
+
+@Composable
+private fun EmptyBookmarkState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.BookmarkBorder,
+                contentDescription = "No Bookmarks",
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Chưa có bài viết nào được lưu",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BookmarkList(
+    bookmarkedNews: List<NewsItem>,
+    onNewsClick: (String) -> Unit,
+    onDeleteBookmark: (NewsItem) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(bookmarkedNews) { news ->
+            BookmarkCard(
+                news = news,
+                onNewsClick = onNewsClick,
+                onDeleteBookmark = onDeleteBookmark
+            )
+        }
+    }
+}
+
+@Composable
+private fun BookmarkCard(
+    news: NewsItem,
+    onNewsClick: (String) -> Unit,
+    onDeleteBookmark: (NewsItem) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        // Card item chính
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable { onNewsClick(news.id) }
         ) {
-            // Image
-            Box(
+            NewsCard(
+                newsItem = news,
+                onNewsClick = { /* Bỏ qua vì đã xử lý ở trên */ }
+            )
+
+            // Icon bookmark nhỏ ở góc phải trên của card
+            Icon(
+                imageVector = Icons.Default.Cancel,
+                contentDescription = "Xóa bookmark",
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                AsyncImage(
-                    model = newsItem.imageRes,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                    .align(Alignment.TopEnd)
+                    .padding(top = 3.dp, end = 13.dp)
+                    .size(18.dp)
+                    .clickable { showDialog = true }
+            )
+        }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Title
-                Text(
-                    text = newsItem.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Date and read time
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
+        // Dialog xác nhận xóa
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = {
                     Text(
-                        text = formattedDate,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontSize = 11.sp
+                        "Xóa bookmark",
+                        style = MaterialTheme.typography.titleMedium
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
+                },
+                text = {
                     Text(
-                        text = "${newsItem.readTime} phút",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontSize = 11.sp
+                        "Bạn có chắc muốn xóa bài viết này khỏi danh sách đã lưu?",
+                        style = MaterialTheme.typography.bodyMedium
                     )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDialog = false
+                            onDeleteBookmark(news)
+                        }
+                    ) {
+                        Text(
+                            "Xóa",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Hủy")
+                    }
                 }
-            }
+            )
         }
     }
 }

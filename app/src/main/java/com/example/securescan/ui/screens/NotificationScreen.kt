@@ -22,7 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Notifications
@@ -53,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -67,12 +66,9 @@ import com.example.securescan.data.models.NotificationItem
 import com.example.securescan.data.models.NotificationType
 import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.theme.AccentBlue
-import com.example.securescan.ui.theme.BackgroundColor
 import com.example.securescan.ui.theme.DeepBlue
 import com.example.securescan.ui.theme.ErrorRed
-import com.example.securescan.ui.theme.LightBlue
 import com.example.securescan.ui.theme.PaleBlue
-import com.example.securescan.ui.theme.PrimaryBlue
 import com.example.securescan.ui.theme.White
 import com.example.securescan.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
@@ -120,7 +116,7 @@ fun NotificationScreen(
             // Top app bar
             AppTopBar(
                 title = "Thông báo",
-                navigationIcon = Icons.Default.ArrowBack,
+                navigationIcon = Icons.Default.ArrowBackIosNew,
                 onNavigationClick = { navController.popBackStack() },
                 actionIcon = Icons.Default.DoneAll,
                 onActionIconClick = {
@@ -251,8 +247,8 @@ fun NotificationFilterOptions(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (selectedFilter == index) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
+                            MaterialTheme.colorScheme.primary
+                        else
                             MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier.padding(vertical = 8.dp)

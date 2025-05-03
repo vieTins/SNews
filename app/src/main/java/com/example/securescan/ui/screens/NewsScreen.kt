@@ -8,29 +8,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Article
-import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,27 +38,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.securescan.data.models.NewsItem
 import com.example.securescan.ui.components.AppTopBar
-import com.example.securescan.ui.theme.AccentBlue
-import com.example.securescan.ui.theme.DeepBlue
-import com.example.securescan.ui.theme.White
+import com.example.securescan.ui.components.FeaturedNewsCard
+import com.example.securescan.ui.components.NewsCard
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun NewsScreen(
@@ -104,6 +88,9 @@ fun NewsScreen(
                 onCloseSearch = {
                     isSearching = false
                     searchQuery = ""
+                },
+                onBookmarkClick = {
+                    navController.navigate("bookmarks")
                 }
             )
 
@@ -159,36 +146,17 @@ fun NewsScreen(
                 }
             }
         }
-
-// Floating Action Button
-        if (!isSearching) {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("bookmarks")
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                containerColor = AccentBlue,
-                contentColor = White
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bookmark,
-                    contentDescription = "Đăng ký nhận thông báo"
-                )
-            }
-        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsTopAppBar(
     onSearchClicked: () -> Unit,
     isSearching: Boolean,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    onCloseSearch: () -> Unit
+    onCloseSearch: () -> Unit,
+    onBookmarkClick: () -> Unit
 ) {
     if (isSearching) {
         Box(
@@ -206,7 +174,7 @@ fun NewsTopAppBar(
                 placeholder = { Text("Tìm kiếm tin tức...") },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Outlined.Search,
+                        imageVector = Icons.Outlined.Mic,
                         contentDescription = "Search Icon"
                     )
                 },
@@ -218,8 +186,10 @@ fun NewsTopAppBar(
                         )
                     }
                 },
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
                     cursorColor = MaterialTheme.colorScheme.primary,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
@@ -230,7 +200,8 @@ fun NewsTopAppBar(
     } else {
         AppTopBar(
             title = "Tin tức & Cảnh báo",
-            navigationIcon = Icons.Default.Article,
+            navigationIcon = Icons.Default.Bookmarks,
+            onNavigationClick = onBookmarkClick,
             actionIcon = Icons.Outlined.Search,
             onActionIconClick = onSearchClicked,
         )
@@ -240,7 +211,7 @@ fun NewsTopAppBar(
 @Composable
 fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
     val filteredFeaturedNews = featuredNews.filter { it.isFeatured }
-    
+
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
     ) {
@@ -258,116 +229,7 @@ fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
             contentPadding = PaddingValues(end = 16.dp)
         ) {
             items(filteredFeaturedNews) { news ->
-                Card(
-                    modifier = Modifier
-                        .width(280.dp)
-                        .height(200.dp)
-                        .clickable { onNewsClick(news.id) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        AsyncImage(
-                            model = news.imageRes,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-
-                        // Gradient overlay
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            Color.Black.copy(alpha = 0.7f)
-                                        ),
-                                        startY = 0f,
-                                        endY = 400f
-                                    )
-                                )
-                        )
-
-                        // Content
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.Bottom
-                        ) {
-                            // Tag
-                            Card(
-                                shape = RoundedCornerShape(4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = getColorFromString(news.tagColor)
-                                )
-                            ) {
-                                Text(
-                                    text = news.tag,
-                                    color = White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Title
-                            Text(
-                                text = news.title,
-                                color = White,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                                )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            // Date and read time
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DateRange,
-                                    contentDescription = null,
-                                    tint = White.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(14.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Text(
-                                    text = news.date,
-                                    color = White.copy(alpha = 0.8f),
-                                    fontSize = 12.sp
-                                )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    tint = White.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(14.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Text(
-                                    text = "${news.readTime} phút đọc",
-                                    color = White.copy(alpha = 0.8f),
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                }
+                FeaturedNewsCard(news = news, onNewsClick = onNewsClick)
             }
         }
     }
@@ -396,117 +258,5 @@ fun NewsListHeader(title: String, onViewAllClick: () -> Unit) {
             fontWeight = FontWeight.Medium,
             modifier = Modifier.clickable(onClick = onViewAllClick)
         )
-    }
-}
-
-@Composable
-fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
-    val timestampString = newsItem.date
-    val timestamp = timestampString.toLongOrNull() ?: 0L
-
-    val date = Date(timestamp)
-
-    val formatter = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
-    val formattedDate = formatter.format(date)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onNewsClick(newsItem.id) },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                AsyncImage(
-                    model = newsItem.imageRes,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Title
-                Text(
-                    text = newsItem.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = DeepBlue,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-
-                // Date and read time
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = formattedDate,
-                        color = Color.Gray,
-                        fontSize = 11.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = "${newsItem.readTime} phút",
-                        color = Color.Gray,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun getColorFromString(colorString: String): Color {
-    return when (colorString.uppercase()) {
-        "RED" -> MaterialTheme.colorScheme.error
-        "BLUE" -> MaterialTheme.colorScheme.primary
-        "YELLOW" -> MaterialTheme.colorScheme.tertiary
-        "GREEN" -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 }
