@@ -255,6 +255,15 @@ fun NewsDetailScreen(
                 display: block;
                 margin: auto;
             }
+            p {
+                margin: 4px 0; 
+                line-height: 1.5; 
+            }
+            h1 , h2 , h3{
+              margin: 4px 0; 
+              margin-bottom: 10px;
+              font-size: 24px;
+            }
         </style>
     </head>
     <body>

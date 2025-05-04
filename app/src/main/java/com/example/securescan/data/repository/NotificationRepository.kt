@@ -36,7 +36,7 @@ class NotificationRepository {
     }
 
     fun getNotifications(): Flow<List<NotificationItem>> = flow {
-        val snapshot = notificationsCollection.orderBy("time", com.google.firebase.firestore.Query.Direction.DESCENDING).get().await()
+        val snapshot = notificationsCollection.get().await()
         val notifications = snapshot.documents.mapNotNull { doc ->
             try {
                 NotificationItem(
