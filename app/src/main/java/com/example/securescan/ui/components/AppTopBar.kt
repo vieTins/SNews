@@ -90,25 +90,24 @@ fun AppTopBar(
             // Spacer để đẩy icon sang trái, title vẫn ở giữa Box
             Spacer(modifier = Modifier.weight(1f))
 
-            // trailing content hoặc action icon
-            if (trailingContent != null) {
-                trailingContent()
-            } else {
-                actionIcon?.let {
-                    IconButton(onClick = { onActionIconClick?.invoke() }) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = "Action Icon",
-                                tint = White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
+            // trailing content
+            trailingContent?.invoke()
+
+            // action icon
+            actionIcon?.let {
+                IconButton(onClick = { onActionIconClick?.invoke() }) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = "Action Icon",
+                            tint = White,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                 }
             }

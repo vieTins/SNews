@@ -28,6 +28,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.securescan.data.network.FirebaseAuthService
 import com.example.securescan.ui.components.BottomNavigation
+import com.example.securescan.ui.screens.AboutAppScreen
+import com.example.securescan.ui.screens.AboutSection
 import com.example.securescan.ui.screens.AllBookmarkScreen
 import com.example.securescan.ui.screens.AllNewsScreen
 import com.example.securescan.ui.screens.HomeScreen
@@ -35,6 +37,7 @@ import com.example.securescan.ui.screens.LoginScreen
 import com.example.securescan.ui.screens.NewsDetailScreen
 import com.example.securescan.ui.screens.NewsScreen
 import com.example.securescan.ui.screens.NotificationScreen
+import com.example.securescan.ui.screens.NotificationSettingsScreen
 import com.example.securescan.ui.screens.PersonalInformationScreen
 import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
@@ -156,7 +159,6 @@ class MainActivity : ComponentActivity() {
                             composable("settings") {
                                 SettingsScreen(
                                     navController = navController,
-                                    authViewModel = viewModel,
                                     onLogout = {
                                         viewModel.logout()
                                         navController.navigate("welcome") {
@@ -164,6 +166,16 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     themeViewModel = themeViewModel
+                                )
+                            }
+                            composable(
+                                route = "about_app/{section}",
+                                arguments = listOf(navArgument("section") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val section = backStackEntry.arguments?.getString("section") ?: ""
+                                AboutAppScreen(
+                                    navController = navController,
+                                    section = AboutSection.valueOf(section)
                                 )
                             }
                             composable("edit_profile") {
@@ -240,6 +252,9 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 )
+                            }
+                            composable("notification_settings") {
+                                NotificationSettingsScreen(navController = navController)
                             }
 
                         }
