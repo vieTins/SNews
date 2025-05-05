@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
+import com.google.firebase.firestore.FieldValue
+import kotlinx.coroutines.tasks.await
 
 class NewsRepository {
 
@@ -21,6 +23,22 @@ class NewsRepository {
             Color(this.toColorInt())
         } catch (e: Exception) {
             Color.Black
+        }
+    }
+
+    // Tăng số lượt đọc
+    suspend fun incrementReadCount(newsId: String) {
+        try {
+            val newsRef = newsCollection.document(newsId)
+            Log.d("NewsRepository", "Incrementing read count for newsId: $newsId")
+            Log.d("NewsRepository", "Document reference: $newsRef")
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(newsRef)
+                val currentReadCount = snapshot.getLong("readCount") ?: 0
+                transaction.update(newsRef, "readCount", currentReadCount + 1)
+            }.await()
+        } catch (e: Exception) {
+            Log.e("NewsRepository", "Error incrementing read count", e)
         }
     }
 
@@ -50,7 +68,8 @@ class NewsRepository {
                         createBy = data["createdBy"] as? String ?: "",
                         likeCount = (data["likeCount"] as? Long)?.toInt() ?: 0,
                         commentCount = (data["commentCount"] as? Long)?.toInt() ?: 0,
-                        shareCount = (data["shareCount"] as? Long)?.toInt() ?: 0
+                        shareCount = (data["shareCount"] as? Long)?.toInt() ?: 0 ,
+                        readCount = (data["readCount"] as? Long)?.toInt() ?: 0
                     )
                 } catch (e: Exception) {
                     null

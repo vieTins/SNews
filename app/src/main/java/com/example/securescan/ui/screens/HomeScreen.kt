@@ -1,13 +1,21 @@
 package com.example.securescan.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -15,10 +23,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.DataThresholding
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,202 +55,125 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.securescan.data.models.User
+import coil.compose.AsyncImage
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.components.NewsCard
+import com.example.securescan.ui.theme.FunctionGreen
+import com.example.securescan.ui.theme.FunctionOrange
+import com.example.securescan.ui.theme.FunctionOrangeDark
+import com.example.securescan.ui.theme.FunctionPurple
+import com.example.securescan.ui.theme.FunctionPurpleDark
+import com.example.securescan.ui.theme.FunctionTeal
+import com.example.securescan.ui.theme.FunctionTealDark
+import com.example.securescan.ui.theme.SurfaceLight
+import com.example.securescan.ui.theme.White
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-val PrimaryBlue = Color(0xFF3674B5)
-val SecondaryBlue = Color(0xFF578FCA)
-val AccentBlue = Color(0xFF1E88E5)
-val LightBlue = Color(0xFFA1E3F9)
-val PaleBlue = Color(0xFFD1F8EF)
-val DeepBlue = Color(0xFF0D47A1)
-val Red = Color(0xFFFF3B30)
-val White = Color(0xFFFFFFFF)
-val BackgroundColor = Color(0xFFF8FBFF)
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    val viewModel : UserViewModel = viewModel()
+    val viewModel: UserViewModel = viewModel()
     val user by viewModel.user
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var lastClickMessage by remember { mutableStateOf("") }
-    var showSnackbar by remember { mutableStateOf(false) }
+    var showSnackBar by remember { mutableStateOf(false) }
 
-    LaunchedEffect(showSnackbar) {
-        if (showSnackbar) {
+    LaunchedEffect(showSnackBar) {
+        if (showSnackBar) {
             delay(2000)
-            showSnackbar = false
+            showSnackBar = false
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundColor)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Top app bar - cố định
-            TopAppBar(user)
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = "",
+                background = MaterialTheme.colorScheme.primary,
+                trailingContent = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
 
-            // Main content - có thể kéo
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 80.dp) // Thêm padding để tránh FAB
-                ) {
-                    item { SearchBar() }
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
-                    item { SecurityCarousel() }
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
-                    item {
-                        FunctionsSection(
-                            navController = navController,
-                            onFunctionClick = { message ->
-                                lastClickMessage = message
-                                showSnackbar = true
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(message)
+                            if (user.profilePic != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = user.profilePic,
+                                        contentDescription = "User Avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.matchParentSize()
+                                    )
                                 }
                             }
-                        )
+
+                            Text(
+                                text = "Xin chào!",
+                                color = White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = user.name,
+                                color = White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
-                    item { NewsSection(navController) }
                 }
-            }
-
-//            BottomNavigation()
+            )
         }
-
-        // Hiển thị thông báo click
-        AnimatedVisibility(
-            visible = showSnackbar,
-            enter = fadeIn(),
-            exit = fadeOut(),
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.TopCenter)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues)
         ) {
-            Card(
-                modifier = Modifier.padding(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF323232))
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                Text(
-                    text = lastClickMessage,
-                    color = Color.White,
-                    modifier = Modifier.padding(12.dp),
-                    fontSize = 14.sp
-                )
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+                item { SecurityCarousel() }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+                item {
+                    FunctionsSection(
+                        navController = navController,
+                        onFunctionClick = { message ->
+                            lastClickMessage = message
+                            showSnackBar = true
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(message)
+                            }
+                        }
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+                item { NewsSection(navController) }
             }
-        }
-    }
-}
-
-@Composable
-fun TopAppBar(user : User) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(DeepBlue, PrimaryBlue)
-                )
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Shield icon với hiệu ứng ánh sáng
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                LightBlue.copy(alpha = 0.8f),
-                                LightBlue.copy(alpha = 0.1f)
-                            ),
-                            radius = 20f
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Shield,
-                    contentDescription = "Shield Icon",
-                    tint = White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Name
-            Text(
-                text = user.name,
-                color = White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-@Composable
-fun SearchBar() {
-    OutlinedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .clickable {
-                // Xử lý click vào search bar
-            },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "Search",
-                tint = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Text(
-                text = "Nhập số điện thoại cần kiểm tra",
-                color = Color.Gray,
-                fontSize = 16.sp
-            )
         }
     }
 }
@@ -232,14 +184,6 @@ fun SecurityCarousel() {
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp)
     ) {
-        Text(
-            text = "Cẩm nang An toàn thông tin",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = DeepBlue
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         val pagerState = rememberPagerState(pageCount = { 3 })
         val coroutineScope = rememberCoroutineScope()
@@ -279,7 +223,7 @@ fun SecurityCarousel() {
                             .size(if (isSelected) 10.dp else 8.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isSelected) White else White.copy(alpha = 0.5f)
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             )
                             .clickable {
                                 coroutineScope.launch {
@@ -296,9 +240,9 @@ fun SecurityCarousel() {
 @Composable
 fun SecurityCard(page: Int) {
     val gradientColors = when (page) {
-        0 -> listOf(SecondaryBlue, DeepBlue)
-        1 -> listOf(Color(0xFF26A69A), Color(0xFF00796B))
-        else -> listOf(Color(0xFF5C6BC0), Color(0xFF3949AB))
+        0 -> listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+        1 -> listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer)
+        else -> listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary)
     }
 
     val icons = listOf(
@@ -308,7 +252,7 @@ fun SecurityCard(page: Int) {
     )
 
     val titles = listOf(
-        "CẨM NANG ĐẢM BẢO\nAN TOÀN THÔNG TIN",
+        "CẨM NANG AN TOÀN THÔNG TIN",
         "BẢO VỆ DỮ LIỆU\nCÁ NHÂN",
         "CẢNH BÁO LỪA ĐẢO\nTRỰC TUYẾN"
     )
@@ -341,9 +285,9 @@ fun SecurityCard(page: Int) {
                 ) {
                     Text(
                         text = titles[page],
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         lineHeight = 28.sp
                     )
 
@@ -351,13 +295,13 @@ fun SecurityCard(page: Int) {
 
                     Button(
                         onClick = { },
-                        colors = ButtonDefaults.buttonColors(containerColor = White),
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceLight),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "Xem ngay",
-                            color = gradientColors[0],
+                            color = baseBlue3,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -375,7 +319,7 @@ fun SecurityCard(page: Int) {
                         imageVector = icons[page],
                         contentDescription = null,
                         modifier = Modifier.size(72.dp),
-                        tint = White.copy(alpha = 0.8f)
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -386,18 +330,17 @@ fun SecurityCard(page: Int) {
 @Composable
 fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> Unit) {
     Column(
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Text(
-            text = "Chức năng",
+            text = "Tính năng",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // First row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -405,35 +348,30 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.Call,
                 title = "Kiểm tra SĐT",
-                gradientColors = listOf(Color(0xFF42A5F5), Color(0xFF1976D2)),
+                gradientColors = listOf(FunctionGreen, FunctionGreen),
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("check_phone_bank")
-                }
+                onClick = { navController.navigate("check_phone_bank") }
             )
+            Spacer(modifier = Modifier.width(12.dp))
             FunctionItem(
                 icon = Icons.Default.Language,
                 title = "Kiểm tra Web",
-                gradientColors = listOf(Color(0xFF66BB6A), Color(0xFF388E3C)),
+                gradientColors = listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer),
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("scan")
-                }
+                onClick = { navController.navigate("scan") }
             )
+            Spacer(modifier = Modifier.width(12.dp))
             FunctionItem(
                 icon = Icons.Default.CreditCard,
                 title = "Kiểm tra STK",
-                gradientColors = listOf(Color(0xFFFFB74D), Color(0xFFF57C00)),
+                gradientColors = listOf(FunctionPurple, FunctionPurpleDark),
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("check_phone_bank")
-                }
+                onClick = { navController.navigate("check_phone_bank") }
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Second row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -441,25 +379,23 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
             FunctionItem(
                 icon = Icons.Default.DataThresholding,
                 title = "Dữ Liệu Lừa Đảo",
-                gradientColors = listOf(Color(0xFFEC407A), Color(0xFFC2185B)),
+                gradientColors = listOf(MaterialTheme.colorScheme.error, MaterialTheme.colorScheme.error),
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("report_data")
-                }
+                onClick = { navController.navigate("report_data") }
             )
+            Spacer(modifier = Modifier.width(12.dp))
             FunctionItem(
                 icon = Icons.AutoMirrored.Filled.Assignment,
                 title = "Báo cáo",
-                gradientColors = listOf(Color(0xFF7E57C2), Color(0xFF512DA8)),
+                gradientColors = listOf(FunctionOrange, FunctionOrangeDark),
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    navController.navigate("report")
-                }
+                onClick = { navController.navigate("report") }
             )
+            Spacer(modifier = Modifier.width(12.dp))
             FunctionItem(
                 icon = Icons.Default.Info,
                 title = "Hướng dẫn",
-                gradientColors = listOf(Color(0xFF26A69A), Color(0xFF00796B)),
+                gradientColors = listOf(FunctionTeal, FunctionTealDark),
                 modifier = Modifier.weight(1f),
                 onClick = { onFunctionClick("Bạn đã click vào Hướng dẫn") }
             )
@@ -482,9 +418,7 @@ fun FunctionItem(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) {
-                onClick()
-            }
+            ) { onClick() }
     ) {
         Box(
             modifier = Modifier
@@ -499,7 +433,7 @@ fun FunctionItem(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -508,9 +442,9 @@ fun FunctionItem(
 
         Text(
             text = title,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
-            color = DeepBlue,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
     }
@@ -520,94 +454,30 @@ fun FunctionItem(
 fun NewsSection(navController: NavController) {
     val viewModelNews: NewsViewModel = viewModel()
     val newsList by viewModelNews.allNews.collectAsState(initial = emptyList())
+    
     Column(
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+
     ) {
         Text(
             text = "Tin tức & Cảnh báo",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
+        
         Spacer(modifier = Modifier.height(16.dp))
-        // Danh sách tin tức - tôi chỉ muốn 3 tin tức
+
         val newsToShow = newsList.take(3)
         newsToShow.forEach { news ->
-            NewsItem(
-                title = news.title,
-                date = news.date,
-                accentColor = Color(android.graphics.Color.parseColor(news.tagColor))
-            , onClick = {
-                    navController.navigate("news_detail/${news.id}")
+            NewsCard(
+                newsItem = news,
+                onNewsClick = { newsId ->
+                    viewModelNews.incrementReadCount(newsId)
+                    navController.navigate("news_detail/$newsId")
                 }
             )
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
-}
-
-@Composable
-fun NewsItem(title: String, date: String, accentColor: Color , onClick: () -> Unit = {}) {
-    val timestamp = date?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
-
-    val date1 = Date(timestamp)
-
-    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    val formattedDate = formatter.format(date1)
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(96.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Colored vertical indicator
-            Box(
-                modifier = Modifier
-                    .width(8.dp)
-                    .fillMaxHeight()
-                    .background(accentColor)
-            )
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(14.dp)
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DeepBlue,
-                    maxLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = formattedDate,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
-
-            // Arrow icon
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
-
 }
 

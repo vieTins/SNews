@@ -1,6 +1,5 @@
 package com.example.securescan.data.models
 
-
 data class NotificationItem(
     val id: String,
     val title: String,

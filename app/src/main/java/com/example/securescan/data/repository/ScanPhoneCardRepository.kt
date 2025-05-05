@@ -1,11 +1,9 @@
 package com.example.securescan.data.repository
 
-import com.example.securescan.data.ScanPhone
+import com.example.securescan.data.models.ScanPhone
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.firestore
 
 class ScanPhoneCardRepository {
 

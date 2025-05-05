@@ -1,4 +1,4 @@
-package com.example.securescan.data
+package com.example.securescan.data.models
 
 data class ScanPhone(
     val phone : String,

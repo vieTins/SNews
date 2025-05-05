@@ -51,10 +51,12 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.database)
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.google.firebase.auth.ktx)
 
+    implementation ("com.google.accompanist:accompanist-systemuicontroller:0.34.0")
 
     implementation(libs.retrofit)
     implementation(libs.converter.gson)

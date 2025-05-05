@@ -2,7 +2,6 @@ package com.example.securescan.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.example.securescan.data.ScanPhone
 import com.example.securescan.data.models.ScanState
 import com.example.securescan.data.repository.ScanPhoneCardRepository
 

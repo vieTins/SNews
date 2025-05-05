@@ -1,47 +1,56 @@
 package com.example.securescan.ui.screens
 
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import coil.compose.AsyncImage
-import com.example.securescan.R
 import com.example.securescan.data.models.NewsItem
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.components.FeaturedNewsCard
+import com.example.securescan.ui.components.NewsCard
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun NewsScreen(
@@ -54,10 +63,6 @@ fun NewsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
-    var selectedFilter by remember { mutableStateOf("Tất cả") }
-    val filters = listOf("Tất cả", "Bảo mật", "Công nghệ", "Tài chính", "Pháp luật")
-
-    // Lọc tin tức dựa trên query tìm kiếm
     val filteredNews = if (searchQuery.isBlank()) {
         newsList
     } else {
@@ -72,10 +77,9 @@ fun NewsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Top App Bar
             NewsTopAppBar(
                 onSearchClicked = { isSearching = true },
                 isSearching = isSearching,
@@ -84,53 +88,22 @@ fun NewsScreen(
                 onCloseSearch = {
                     isSearching = false
                     searchQuery = ""
+                },
+                onBookmarkClick = {
+                    navController.navigate("bookmarks")
                 }
             )
 
-            // Filter Bar
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(filters) { filter ->
-                    FilterChip(
-                        selected = filter == selectedFilter,
-                        onClick = { selectedFilter = filter },
-                        label = { Text(filter) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = when (filter) {
-                                    "Tất cả" -> Icons.Default.AllInclusive
-                                    "Bảo mật" -> Icons.Default.Security
-                                    "Công nghệ" -> Icons.Default.Computer
-                                    "Tài chính" -> Icons.Default.AccountBalance
-                                    "Pháp luật" -> Icons.Default.Gavel
-                                    else -> Icons.Default.Info
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF5E7CE2),
-                            selectedLabelColor = Color.White,
-                            selectedLeadingIconColor = Color.White
-                        )
-                    )
-                }
-            }
-
-            // Main Content
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 if (!isSearching) {
                     item {
-                        NewsCarousel(newsList.take(3), onNewsClick = onNavigateToNewsDetail)
+                        NewsCarousel(newsList.take(5), onNewsClick = { newsId ->
+                            viewModel.incrementReadCount(newsId)
+                            onNavigateToNewsDetail(newsId)
+                        })
                     }
                 }
 
@@ -156,14 +129,14 @@ fun NewsScreen(
                                 Icon(
                                     imageVector = Icons.Default.SearchOff,
                                     contentDescription = null,
-                                    tint = Color.Gray,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(64.dp)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     text = "Không tìm thấy kết quả phù hợp",
                                     fontSize = 16.sp,
-                                    color = Color.Gray,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -171,52 +144,34 @@ fun NewsScreen(
                     }
                 } else {
                     items(filteredNews) { newsItem ->
-                        NewsCard(newsItem = newsItem, onNewsClick = onNavigateToNewsDetail)
+                        NewsCard(
+                            newsItem = newsItem, 
+                            onNewsClick = { newsId ->
+                                viewModel.incrementReadCount(newsId)
+                                onNavigateToNewsDetail(newsId)
+                            }
+                        )
                     }
                 }
-            }
-        }
-
-        // Floating Action Button
-        if (!isSearching) {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("bookmarks")
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                containerColor = AccentBlue,
-                contentColor = White
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bookmark,
-                    contentDescription = "Đăng ký nhận thông báo"
-                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsTopAppBar(
     onSearchClicked: () -> Unit,
     isSearching: Boolean,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    onCloseSearch: () -> Unit
+    onCloseSearch: () -> Unit,
+    onBookmarkClick: () -> Unit
 ) {
     if (isSearching) {
-        // Hiển thị thanh tìm kiếm khi đang tìm kiếm
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(DeepBlue, PrimaryBlue)
-                    )
-                )
+                .background(MaterialTheme.colorScheme.primary)
                 .padding(8.dp)
         ) {
             TextField(
@@ -228,7 +183,7 @@ fun NewsTopAppBar(
                 placeholder = { Text("Tìm kiếm tin tức...") },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Outlined.Search,
+                        imageVector = Icons.Outlined.Mic,
                         contentDescription = "Search Icon"
                     )
                 },
@@ -240,9 +195,11 @@ fun NewsTopAppBar(
                         )
                     }
                 },
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = White,
-                    cursorColor = PrimaryBlue,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    cursorColor = MaterialTheme.colorScheme.primary,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -250,81 +207,20 @@ fun NewsTopAppBar(
             )
         }
     } else {
-        // Hiển thị AppBar thông thường
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(DeepBlue, PrimaryBlue)
-                    )
-                )
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // News icon
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(LightBlue.copy(alpha = 0.8f), LightBlue.copy(alpha = 0.1f)),
-                                    radius = 20f
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Article,
-                            contentDescription = "News Icon",
-                            tint = White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    // Title
-                    Text(
-                        text = "Tin tức & Cảnh báo",
-                        color = White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                // Search icon
-                IconButton(
-                    onClick = onSearchClicked,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(White.copy(alpha = 0.2f))
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Search,
-                        contentDescription = "Search",
-                        tint = White
-                    )
-                }
-            }
-        }
+        AppTopBar(
+            title = "Tin tức & Cảnh báo",
+            navigationIcon = Icons.Default.Bookmarks,
+            onNavigationClick = onBookmarkClick,
+            actionIcon = Icons.Outlined.Search,
+            onActionIconClick = onSearchClicked,
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
     val filteredFeaturedNews = featuredNews.filter { it.isFeatured }
-    
+
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
     ) {
@@ -332,7 +228,7 @@ fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
             text = "Tin nổi bật",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -342,117 +238,7 @@ fun NewsCarousel(featuredNews: List<NewsItem>, onNewsClick: (String) -> Unit) {
             contentPadding = PaddingValues(end = 16.dp)
         ) {
             items(filteredFeaturedNews) { news ->
-                Card(
-                    modifier = Modifier
-                        .width(280.dp)
-                        .height(200.dp)
-                        .clickable { onNewsClick(news.id) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        AsyncImage(
-                            model = news.imageRes,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-
-                        // Gradient overlay
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            Color.Black.copy(alpha = 0.7f)
-                                        ),
-                                        startY = 0f,
-                                        endY = 400f
-                                    )
-                                )
-                        )
-
-                        // Content
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.Bottom
-                        ) {
-                            // Tag
-                            Card(
-                                shape = RoundedCornerShape(4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = getColorFromString(news.tagColor)
-                                )
-                            ) {
-                                Text(
-                                    text = news.tag,
-                                    color = White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Title
-                            Text(
-                                text = news.title,
-                                color = White,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            // Date and read time
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.DateRange,
-                                    contentDescription = null,
-                                    tint = White.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(14.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Text(
-                                    text = news.date,
-                                    color = White.copy(alpha = 0.8f),
-                                    fontSize = 12.sp
-                                )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    tint = White.copy(alpha = 0.8f),
-                                    modifier = Modifier.size(14.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(4.dp))
-
-                                Text(
-                                    text = "${news.readTime} phút đọc",
-                                    color = White.copy(alpha = 0.8f),
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                }
+                FeaturedNewsCard(news = news, onNewsClick = onNewsClick)
             }
         }
     }
@@ -471,125 +257,15 @@ fun NewsListHeader(title: String, onViewAllClick: () -> Unit) {
             text = title,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = DeepBlue
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Text(
             text = "Xem tất cả",
             fontSize = 14.sp,
-            color = AccentBlue,
+            color = baseBlue3,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.clickable(onClick = onViewAllClick)
         )
     }
 }
-
-@Composable
-fun NewsCard(newsItem: NewsItem, onNewsClick: (String) -> Unit) {
-    val timestampString = newsItem?.date
-    val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
-
-    val date = Date(timestamp)
-
-    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    val formattedDate = formatter.format(date)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onNewsClick(newsItem.id) },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Image
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                AsyncImage(
-                    model = newsItem.imageRes,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Title
-                Text(
-                    text = newsItem.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = DeepBlue,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Date and read time
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = formattedDate,
-                        color = Color.Gray,
-                        fontSize = 11.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(12.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = "${newsItem.readTime} phút",
-                        color = Color.Gray,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-fun getColorFromString(colorString: String): Color {
-    return when (colorString.uppercase()) {
-        "RED" -> Color.Red
-        "BLUE" -> Color.Blue
-        "YELLOW" -> Color.Yellow
-        "GREEN" -> Color.Green
-        else -> Color.Gray
-    }
-}
-

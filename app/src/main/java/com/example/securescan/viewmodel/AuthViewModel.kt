@@ -2,6 +2,7 @@ package com.example.securescan.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.securescan.data.network.FirebaseAuthService
 
 class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel() {
@@ -57,5 +58,15 @@ class AuthViewModel(private val userRepository: FirebaseAuthService) : ViewModel
     fun logout() {
         userRepository.logout()
         loginSuccess.value = false
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+class AuthViewModelFactory(private val userRepository: FirebaseAuthService) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+            return AuthViewModel(userRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

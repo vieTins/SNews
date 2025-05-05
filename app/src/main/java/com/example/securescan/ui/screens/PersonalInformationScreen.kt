@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,9 +35,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -57,7 +59,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -65,6 +66,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
+import com.example.securescan.data.models.User
+import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.UserViewModel
 
 @Composable
@@ -100,200 +104,46 @@ fun PersonalInformationScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundColor)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Top app bar
-            Box(
+            // Fixed AppTopBar
+            AppTopBar(
+                title = "Thông tin cá nhân",
+                navigationIcon = Icons.Default.ArrowBack,
+                onNavigationClick = { navController.navigateUp() }
+            )
+
+            // Scrollable content
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(DeepBlue, PrimaryBlue)
-                        )
-                    )
-                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = White
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Thông tin cá nhân",
-                        color = White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            // Profile Header with Avatar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Avatar with edit button
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(PrimaryBlue, DeepBlue)
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (imageUri != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(imageUri)
-                                    .crossfade(true)
-                                    .transformations(CircleCropTransformation())
-                                    .build(),
-                                contentDescription = "Avatar",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.matchParentSize()
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Avatar",
-                                tint = White,
-                                modifier = Modifier.size(80.dp)
-                            )
-                        }
-
-                        if (isEditing) {
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .background(Color.Black.copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                IconButton(
-                                    onClick = { pickImageLauncher.launch("image/*") },
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(PrimaryBlue)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CameraAlt,
-                                        contentDescription = "Change Avatar",
-                                        tint = White,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                // Modern header with gradient background
+                PersonalInfoHeader(
+                    user = user,
+                    imageUri = imageUri,
+                    isEditing = isEditing,
+                    onImageClick = { if (isEditing) pickImageLauncher.launch("image/*") }
+                )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Name
-                    if (isEditing) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            TextField(
-                                value = name,
-                                onValueChange = { name = it },
-                                modifier = Modifier
-                                    .wrapContentWidth()
-                                    .wrapContentHeight(),
-                                singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = PrimaryBlue,
-                                    unfocusedIndicatorColor = Color.LightGray
-                                ),
-                                textStyle = TextStyle(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DeepBlue,
-                                    textAlign = TextAlign.Center
-                                )
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = name,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DeepBlue,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Status Badge
-                    Card(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = LightBlue.copy(alpha = 0.3f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Verified,
-                                contentDescription = "Verified User",
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Tài khoản đã xác thực",
-                                fontSize = 14.sp,
-                                color = DeepBlue
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Personal Information Cards
-            Card(
+                // Personal Information Card
+                ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(16.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -354,10 +204,12 @@ fun PersonalInformationScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryBlue
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                            containerColor = baseBlue3
+                        ),
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
                 ) {
                     Icon(
                         imageVector = if (isEditing) Icons.Default.Save else Icons.Default.Edit,
@@ -381,11 +233,140 @@ fun PersonalInformationScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            color = baseBlue3
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun PersonalInfoHeader(
+    user: User,
+    imageUri: Uri?,
+    isEditing: Boolean,
+    onImageClick: () -> Unit
+) {
+    val gradientColors = listOf(
+        baseBlue3,
+        baseBlue3.copy(alpha = 0.7f),
+        baseBlue3.copy(alpha = 0.4f)
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = gradientColors
+                )
+            )
+            .padding(vertical = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Profile avatar with shadow and caching
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .clickable(enabled = isEditing) { onImageClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUri)
+                            .crossfade(true)
+                            .transformations(CircleCropTransformation())
+                            .build(),
+                        contentDescription = "Profile Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "User Profile",
+                        tint = baseBlue3,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+
+                if (isEditing) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Change Avatar",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // User info
+            Text(
+                text = user.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = user.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Status Badge
+            Card(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.2f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Verified,
+                        contentDescription = "Verified User",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Tài khoản đã xác thực",
+                        fontSize = 14.sp,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 }
@@ -411,7 +392,7 @@ fun InfoItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = PrimaryBlue,
+                tint = baseBlue3,
                 modifier = Modifier.size(24.dp)
             )
 
@@ -424,7 +405,7 @@ fun InfoItem(
                 Text(
                     text = label,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -438,13 +419,13 @@ fun InfoItem(
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = PrimaryBlue,
-                            unfocusedIndicatorColor = Color.LightGray
+                            focusedIndicatorColor = baseBlue3,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         textStyle = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
-                            color = DeepBlue
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     )
                 } else {
@@ -452,7 +433,7 @@ fun InfoItem(
                         text = value,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = DeepBlue
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -460,11 +441,10 @@ fun InfoItem(
 
         if (showDivider) {
             Spacer(modifier = Modifier.height(8.dp))
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(start = 40.dp),
-                color = Color(0xFFEEEEEE)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)
             )
         }
     }
 }
-

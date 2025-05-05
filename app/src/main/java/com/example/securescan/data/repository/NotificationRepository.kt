@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class NotificationRepository {
     private val db = FirebaseFirestore.getInstance()
@@ -35,14 +36,17 @@ class NotificationRepository {
     }
 
     fun getNotifications(): Flow<List<NotificationItem>> = flow {
-        val snapshot = notificationsCollection.orderBy("time", com.google.firebase.firestore.Query.Direction.DESCENDING).get().await()
+        val snapshot = notificationsCollection.get().await()
         val notifications = snapshot.documents.mapNotNull { doc ->
             try {
+                val timeMillis = doc.getString("time")?.toLongOrNull()
+                val formattedTime = timeMillis?.let { dateFormat.format(Date(it)) } ?: ""
+
                 NotificationItem(
                     id = doc.id,
                     title = doc.getString("title") ?: "",
                     message = doc.getString("message") ?: "",
-                    time = doc.getString("time") ?: "",
+                    time = formattedTime,
                     isRead = doc.getBoolean("isRead") ?: false,
                     type = NotificationType.valueOf(doc.getString("type") ?: "NEWS"),
                     newsId = doc.getString("newsId")

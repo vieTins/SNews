@@ -1,18 +1,25 @@
 package com.example.securescan.data.models
 
-import com.google.firebase.firestore.ServerTimestamp
-import java.util.Date
-
 data class ScanHistory(
+    val userId: String = "",
     val type: String = "",
-    val scanTarget: String = "",
-    @ServerTimestamp val timestamp: Date? = null,
-    val isSafe: Boolean = true,
-    val threatLevel: String = "",
-    val details: ScanDetails = ScanDetails()
+    val target: String = "",
+    val result: String = "",
+    val timestamp: Long = System.currentTimeMillis()
 )
 
-data class ScanDetails(
-    val engineResults: List<String> = listOf(),
-    val detectionRatio: String = "0/60"
-)
+// Enum class để định nghĩa các loại quét
+enum class ScanType {
+    PHONE,
+    BANK_ACCOUNT,
+    WEBSITE,
+    FILE
+}
+
+// Enum class để định nghĩa các kết quả quét
+enum class ScanResult {
+    FRAUD,
+    SUSPICIOUS,
+    DANGEROUS,
+    NO_INFO
+}

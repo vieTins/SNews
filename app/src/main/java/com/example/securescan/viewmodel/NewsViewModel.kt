@@ -220,6 +220,13 @@ class NewsViewModel(
         }
     }
 
+    // Tăng số lượt đọc
+    fun incrementReadCount(newsId: String) {
+        viewModelScope.launch {
+            newsRepository.incrementReadCount(newsId)
+        }
+    }
+
     private val notificationViewModel = NotificationViewModel()
 
     init {
