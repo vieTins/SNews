@@ -55,12 +55,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.components.NewsCard
 import com.example.securescan.ui.theme.FunctionGreen
@@ -71,6 +73,7 @@ import com.example.securescan.ui.theme.FunctionPurpleDark
 import com.example.securescan.ui.theme.FunctionTeal
 import com.example.securescan.ui.theme.FunctionTealDark
 import com.example.securescan.ui.theme.SurfaceLight
+import com.example.securescan.ui.theme.White
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.UserViewModel
@@ -96,9 +99,50 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Xin chào, ${user.name}",
-                leadingIconUrl = user.profilePic,
-                background = MaterialTheme.colorScheme.primary
+                title = "",
+                background = MaterialTheme.colorScheme.primary,
+                trailingContent = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+                            if (user.profilePic != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    AsyncImage(
+                                        model = user.profilePic,
+                                        contentDescription = "User Avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.matchParentSize()
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "Xin chào!",
+                                color = White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = user.name,
+                                color = White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -412,10 +456,11 @@ fun NewsSection(navController: NavController) {
     val newsList by viewModelNews.allNews.collectAsState(initial = emptyList())
     
     Column(
-        modifier = Modifier.padding(horizontal = 16.dp)
+
     ) {
         Text(
             text = "Tin tức & Cảnh báo",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
