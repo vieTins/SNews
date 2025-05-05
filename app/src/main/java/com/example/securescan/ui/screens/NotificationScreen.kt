@@ -280,9 +280,13 @@ fun NotificationItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onNotificationClick(notification.id) },
+            .clickable { 
+                onNotificationClick(notification.id)
+            },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        colors = CardDefaults.cardColors(
+            containerColor = if (notification.isRead) Color.White else Color(0xFFE3F2FD)
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

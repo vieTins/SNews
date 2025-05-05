@@ -1,5 +1,6 @@
 package com.example.securescan.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -78,11 +79,11 @@ fun AllBookmarkScreen(
             if (bookmarkedNews.isEmpty()) {
                 EmptyBookmarkState()
             } else {
-
                     BookmarkList(
                         bookmarkedNews = bookmarkedNews,
                         onNewsClick = { newsId ->
                             navController.navigate("news_detail/$newsId")
+                            Log.d ("TAG", "Clicked news ID: $newsId")
                         },
                         onDeleteBookmark = { news ->
                             viewModel.toggleBookmark(news.id)
@@ -188,7 +189,9 @@ private fun BookmarkCard(
         ) {
             NewsCard(
                 newsItem = news,
-                onNewsClick = { /* Bỏ qua vì đã xử lý ở trên */ }
+                onNewsClick = {
+                    onNewsClick(news.id)
+                }
             )
 
             // Icon bookmark nhỏ ở góc phải trên của card
