@@ -41,6 +41,7 @@ import com.example.securescan.ui.screens.NotificationSettingsScreen
 import com.example.securescan.ui.screens.PersonalInformationScreen
 import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
+import com.example.securescan.ui.screens.ReportDetailScreen
 import com.example.securescan.ui.screens.ReportScreen
 import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
 import com.example.securescan.ui.screens.ScanScreen
@@ -238,6 +239,18 @@ class MainActivity : ComponentActivity() {
                                     onNavigateBack = { navController.navigate("home") {
                                             popUpTo("home") { inclusive = true }
                                         } },
+                                    navController = navController
+                                )
+                            }
+                            composable(
+                                route = "report_detail/{reportId}",
+                                arguments = listOf(navArgument("reportId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val reportId = backStackEntry.arguments?.getString("reportId") ?: ""
+                                ReportDetailScreen(
+                                    reportId = reportId,
+                                    navController = navController,
+                                    viewModel = reportsViewModel
                                 )
                             }
                             composable("check_phone_bank") {

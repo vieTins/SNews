@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -75,7 +76,7 @@ fun ReportScreen(
     var errorMessage by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val scrollState = rememberScrollState()
-
+    val context = LocalContext.current
     val currentUser = FirebaseAuth.getInstance().currentUser
     val email = currentUser?.email ?: "anonymous"
 
@@ -371,6 +372,7 @@ fun ReportScreen(
                                     isSubmitting = true
                                     errorMessage = ""
                                     viewModel.submitReport(
+                                        context,
                                         report,
                                         onSuccess = {
                                             isSubmitting = false

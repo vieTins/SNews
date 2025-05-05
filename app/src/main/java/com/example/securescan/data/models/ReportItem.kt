@@ -1,6 +1,7 @@
 package com.example.securescan.data.models
 
 data class ReportItem (
+    val id : String = "",
     val type: String = "", // "Phone", "Website", "Bank"
     val target: String = "",
     val description: String = "",

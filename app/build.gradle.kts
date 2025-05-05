@@ -68,6 +68,7 @@ dependencies {
 
     implementation ("androidx.navigation:navigation-compose:2.7.7")
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.androidx.media3.common.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

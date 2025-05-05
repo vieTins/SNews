@@ -1,8 +1,10 @@
 package com.example.securescan.ui.screens
 
+
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+
 import com.example.securescan.R
 import com.example.securescan.data.models.ReportItem
 import com.example.securescan.ui.components.AppTopBar
@@ -29,16 +33,22 @@ import com.example.securescan.viewmodel.ReportsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.navigation.NavController
+
 
 @Composable
 fun ReportDataScreen(
     userId: String,
     viewModel: ReportsViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    navController: NavController
 ) {
     val reports by viewModel.userReports
+    val topTargets by viewModel.topTargets
     val isLoading by viewModel.isLoading
     var showFilterDialog by remember { mutableStateOf(false) }
+    var selectedSort by remember { mutableStateOf(0) }
+    var selectedFilter by remember { mutableStateOf(0) }
 
     Box(
         modifier = Modifier
@@ -56,39 +66,51 @@ fun ReportDataScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Info Card
+            // Top Targets Section
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.news5),
-                        contentDescription = "News",
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
                     Text(
-                        text = "Báo cáo ngay thông tin lừa đảo để bảo vệ bản thân và người khác khỏi những mối đe dọa tiềm ẩn.",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
+                        text = "Top Lừa Đảo",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    if (topTargets.isEmpty()) {
+                        Text(
+                            text = "Chưa có dữ liệu",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        topTargets.forEachIndexed { index, (target, count) ->
+                            TopTargetItem(
+                                rank = index + 1,
+                                target = target,
+                                count = count,
+                                dangerLevel = viewModel.getDangerLevelForCount(count),
+                                dangerColor = viewModel.getDangerLevelColorForCount(count)
+                            )
+                            if (index < topTargets.size - 1) {
+                                Divider(
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -109,7 +131,7 @@ fun ReportDataScreen(
                     EmptyView()
                 }
                 else -> {
-                    ReportList(reports = reports)
+                    ReportList(reports = reports, navController = navController)
                 }
             }
         }
@@ -125,7 +147,7 @@ fun ReportDataScreen(
                             type = type,
                             onSuccess = { },
                             onFailure = {
-                                Log.e("ReportDataScreen", "Error filtering reports: ${it.message}")
+                                Log.d( "ReportDataScreen", "Error filtering reports: $it")
                             }
                         )
                     }
@@ -137,24 +159,32 @@ fun ReportDataScreen(
 }
 
 @Composable
-fun ReportList(reports: List<ReportItem>) {
+fun ReportList(reports: List<ReportItem>, navController: NavController) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(reports) { report ->
-            ReportCard(report = report)
+            ReportCard(
+                report = report,
+                onClick = { navController.navigate("report_detail/${report.id}")
+                    Log.d("ReportDataScreen", "Navigating to report detail for ${report.id}") }
+            )
         }
     }
 }
 
 @Composable
-fun ReportCard(report: ReportItem) {
+fun ReportCard(
+    report: ReportItem,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp)),
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -327,6 +357,78 @@ fun FilterButton(text: String, onClick: () -> Unit) {
         )
     ) {
         Text(text = text)
+    }
+}
+
+@Composable
+private fun TopTargetItem(
+    rank: Int,
+    target: String,
+    count: Int,
+    dangerLevel: String,
+    dangerColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Rank
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .background(
+                    color = when (rank) {
+                        1 -> Color(0xFFFFD700) // Gold
+                        2 -> Color(0xFFC0C0C0) // Silver
+                        3 -> Color(0xFFCD7F32) // Bronze
+                        else -> MaterialTheme.colorScheme.primary
+                    },
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = rank.toString(),
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        // Target Info
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = target,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "$count báo cáo",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        // Danger Level
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = dangerColor.copy(alpha = 0.1f)
+        ) {
+            Text(
+                text = dangerLevel,
+                color = dangerColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            )
+        }
     }
 }
 
