@@ -473,6 +473,7 @@ fun NewsSection(navController: NavController) {
             NewsCard(
                 newsItem = news,
                 onNewsClick = { newsId ->
+                    viewModelNews.incrementReadCount(newsId)
                     navController.navigate("news_detail/$newsId")
                 }
             )

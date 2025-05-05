@@ -100,7 +100,10 @@ fun NewsScreen(
             ) {
                 if (!isSearching) {
                     item {
-                        NewsCarousel(newsList.take(3), onNewsClick = onNavigateToNewsDetail)
+                        NewsCarousel(newsList.take(5), onNewsClick = { newsId ->
+                            viewModel.incrementReadCount(newsId)
+                            onNavigateToNewsDetail(newsId)
+                        })
                     }
                 }
 
@@ -141,7 +144,13 @@ fun NewsScreen(
                     }
                 } else {
                     items(filteredNews) { newsItem ->
-                        NewsCard(newsItem = newsItem, onNewsClick = onNavigateToNewsDetail)
+                        NewsCard(
+                            newsItem = newsItem, 
+                            onNewsClick = { newsId ->
+                                viewModel.incrementReadCount(newsId)
+                                onNavigateToNewsDetail(newsId)
+                            }
+                        )
                     }
                 }
             }

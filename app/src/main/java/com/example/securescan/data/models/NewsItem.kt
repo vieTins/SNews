@@ -14,5 +14,6 @@ data class NewsItem(
     val createBy: String = "",
     val likeCount: Int = 0,
     val commentCount: Int = 0,
-    val shareCount: Int = 0
+    val shareCount: Int = 0,
+    val readCount : Int = 0,
 )

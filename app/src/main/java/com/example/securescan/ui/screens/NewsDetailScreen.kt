@@ -92,6 +92,8 @@ fun NewsDetailScreen(
     val viewModelUser: UserViewModel = viewModel()
     val user by viewModelUser.user
 
+
+
     val timestampString = newsItem?.date
     val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
 

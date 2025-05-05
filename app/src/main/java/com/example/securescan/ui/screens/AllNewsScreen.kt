@@ -65,7 +65,7 @@ fun AllNewsScreen(
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     // State for filter
-    val filterOptions = listOf("Tất cả", "Bảo mật", "Lừa đảo", "Cập nhật")
+    val filterOptions = listOf("Tất cả", "Tin tức", "Cảnh báo", "Cập Nhật" , "Bảo Mật")
     var selectedFilter by remember { mutableIntStateOf(0) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
     // State for sort
@@ -75,14 +75,15 @@ fun AllNewsScreen(
     val news by viewModel.allNews.collectAsState()
     val filteredNews = news.filter {
         when (selectedFilter) {
-            1 -> it.tag.equals("Bảo mật", ignoreCase = true)
-            2 -> it.tag.equals("Lừa đảo", ignoreCase = true)
-            3 -> it.tag.equals("Cập nhật", ignoreCase = true)
+            1 -> it.tag.equals("NEWS", ignoreCase = true)
+            2 -> it.tag.equals("WARNING", ignoreCase = true)
+            3 -> it.tag.equals("UPDATES", ignoreCase = true)
+            4 -> it.tag.equals("SECURITY", ignoreCase = true)
             else -> true
         }
     }.let {
         when (selectedSort) {
-            1 -> it.sortedByDescending { n -> n.readTime } // giả sử có viewCount
+            1 -> it.sortedByDescending { n -> n.readCount }
             2 -> it.sortedBy { n -> n.readTime }
             else -> it.sortedByDescending { n -> n.date.toLongOrNull() ?: 0L }
         }
@@ -91,7 +92,9 @@ fun AllNewsScreen(
         else it.title.contains(searchQuery, true) || it.content.contains(searchQuery, true)
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             // AppBar/Search overlay
             if (isSearching) {
@@ -238,7 +241,10 @@ fun AllNewsScreen(
                 items(filteredNews) { newsItem ->
                     NewsCard(
                         newsItem = newsItem,
-                        onNewsClick = { navController.navigate("news_detail/${newsItem.id}") }
+                        onNewsClick = { 
+                            viewModel.incrementReadCount(newsItem.id)
+                            navController.navigate("news_detail/${newsItem.id}")
+                        }
                     )
                 }
             }

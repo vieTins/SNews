@@ -39,11 +39,14 @@ class NotificationRepository {
         val snapshot = notificationsCollection.get().await()
         val notifications = snapshot.documents.mapNotNull { doc ->
             try {
+                val timeMillis = doc.getString("time")?.toLongOrNull()
+                val formattedTime = timeMillis?.let { dateFormat.format(Date(it)) } ?: ""
+
                 NotificationItem(
                     id = doc.id,
                     title = doc.getString("title") ?: "",
                     message = doc.getString("message") ?: "",
-                    time = doc.getString("time") ?: "",
+                    time = formattedTime,
                     isRead = doc.getBoolean("isRead") ?: false,
                     type = NotificationType.valueOf(doc.getString("type") ?: "NEWS"),
                     newsId = doc.getString("newsId")

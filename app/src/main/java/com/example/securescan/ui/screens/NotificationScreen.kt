@@ -68,6 +68,7 @@ import com.example.securescan.ui.theme.ErrorRed
 import com.example.securescan.ui.theme.PaleBlue
 import com.example.securescan.ui.theme.White
 import com.example.securescan.ui.theme.baseBlue3
+import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -83,6 +84,7 @@ fun NotificationScreen(
     var snackBarMessage by remember { mutableStateOf("") }
     val notifications by viewModel.notifications.collectAsState()
     var selectedFilter by remember { mutableIntStateOf(0) }
+    val newsViewModel : NewsViewModel = viewModel()
 
     // Lọc thông báo dựa trên tab được chọn
     val filteredNotifications = when (selectedFilter) {
@@ -154,6 +156,7 @@ fun NotificationScreen(
                         onNotificationClick = { notificationId ->
                             viewModel.markAsRead(notificationId)
                             if (notification.newsId != null) {
+                                newsViewModel.incrementReadCount(notification.newsId)
                                 navController.navigate("news_detail/${notification.newsId}")
                             }
                             snackBarMessage = "Đã mở thông báo: ${notification.title}"
@@ -327,8 +330,26 @@ fun NotificationItemCard(
                     )
                 }
 
+                // Delete button
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .clickable { showDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Xóa thông báo",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 // Unread indicator
                 if (!notification.isRead) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier
                             .size(10.dp)
@@ -338,18 +359,6 @@ fun NotificationItemCard(
                 }
             }
         }
-
-        // Delete icon in top-right corner
-        Icon(
-            imageVector = Icons.Default.Delete,
-            contentDescription = "Xóa thông báo",
-            tint = Color.Gray,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 8.dp, end = 24.dp)
-                .size(18.dp)
-                .clickable { showDialog = true }
-        )
 
         // Confirmation dialog
         if (showDialog) {

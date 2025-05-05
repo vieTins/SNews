@@ -110,7 +110,7 @@ fun NewsCard(
 
                     InfoChip(
                         icon = Icons.Rounded.RemoveRedEye,
-                        text = "${newsItem.readTime} lượt xem"
+                        text = "${newsItem.readCount} lượt xem"
                     )
                 }
             }

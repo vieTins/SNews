@@ -82,6 +82,7 @@ fun AllBookmarkScreen(
                     BookmarkList(
                         bookmarkedNews = bookmarkedNews,
                         onNewsClick = { newsId ->
+                            viewModel.incrementReadCount(newsId)
                             navController.navigate("news_detail/$newsId")
                             Log.d ("TAG", "Clicked news ID: $newsId")
                         },
