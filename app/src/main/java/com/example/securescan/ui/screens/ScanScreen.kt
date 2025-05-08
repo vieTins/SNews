@@ -420,7 +420,7 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
 
                                         Text(
                                             text = if (scanResult == true) 
-                                                "LỪA ĐẢO" 
+                                                "LỪA ĐẢO - KHÔNG NÊN TRUY CẬP"
                                             else 
                                                 "CHƯA CÓ THÔNG TIN",
                                             color = if (scanResult == true) 

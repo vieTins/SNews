@@ -14,12 +14,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.graphics.Color
+import java.util.*
 
 class ReportsViewModel : ViewModel() {
     private val repository = ReportRepository()
 
     private val _userReports = mutableStateOf<List<ReportItem>>(emptyList())
     val userReports: State<List<ReportItem>> = _userReports
+
+    private val _filteredReports = mutableStateOf<List<ReportItem>>(emptyList())
+    val filteredReports: State<List<ReportItem>> = _filteredReports
 
     private val _currentReport = mutableStateOf<ReportItem?>(null)
     val currentReport: State<ReportItem?> = _currentReport
@@ -41,12 +45,71 @@ class ReportsViewModel : ViewModel() {
     private val _isSuccess = mutableStateOf(false)
     val isSuccess: State<Boolean> = _isSuccess
 
+    // Search parameters
+    private var currentSearchQuery: String = ""
+    private var currentDateRange: Pair<Long, Long>? = null
+    private var currentVerificationStatus: Boolean? = null
+    private var currentReportType: String? = null
+
+    fun searchReports(
+        query: String,
+        dateRange: Pair<Long, Long>? = null,
+        verificationStatus: Boolean? = null,
+        reportType: String? = null
+    ) {
+        currentSearchQuery = query
+        currentDateRange = dateRange
+        currentVerificationStatus = verificationStatus
+        currentReportType = reportType
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val filtered = _userReports.value.filter { report ->
+                    val matchesSearch = query.isEmpty() || 
+                        report.target.contains(query, ignoreCase = true) ||
+                        report.description.contains(query, ignoreCase = true) ||
+                        report.reportedBy.contains(query, ignoreCase = true)
+
+                    val matchesDate = dateRange == null || (
+                        report.timestamp >= dateRange.first &&
+                        report.timestamp <= dateRange.second
+                    )
+
+                    val matchesVerification = verificationStatus == null || 
+                        report.check == verificationStatus
+
+                    val matchesType = reportType == null || 
+                        report.type == reportType
+
+                    matchesSearch && matchesDate && matchesVerification && matchesType
+                }
+
+                _filteredReports.value = filtered
+                _isLoading.value = false
+                error.value = null
+            } catch (e: Exception) {
+                error.value = e.message
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearSearch() {
+        currentSearchQuery = ""
+        currentDateRange = null
+        currentVerificationStatus = null
+        currentReportType = null
+        _filteredReports.value = _userReports.value
+    }
+
     fun loadReportsByUserId(userId: String) {
         _isLoading.value = true
         repository.getReportsByUserId(
             userId,
             onSuccess = {
                 _userReports.value = it
+                _filteredReports.value = it
                 _isLoading.value = false
                 error.value = null
             },
@@ -67,6 +130,7 @@ class ReportsViewModel : ViewModel() {
             type,
             onSuccess = { filtered ->
                 _userReports.value = filtered
+                _filteredReports.value = filtered
                 _isLoading.value = false
                 error.value = null
                 onSuccess()
@@ -95,6 +159,7 @@ class ReportsViewModel : ViewModel() {
         repository.getAllReports(
             onSuccess = {
                 _userReports.value = it
+                _filteredReports.value = it
                 _isLoading.value = false
                 error.value = null
             },

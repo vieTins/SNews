@@ -13,6 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,8 +38,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.navigation.NavController
+import java.util.Calendar
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportDataScreen(
     userId: String,
@@ -43,12 +49,25 @@ fun ReportDataScreen(
     onNavigateBack: () -> Unit,
     navController: NavController
 ) {
-    val reports by viewModel.userReports
+    val reports by viewModel.filteredReports
     val topTargets by viewModel.topTargets
     val isLoading by viewModel.isLoading
     var showFilterDialog by remember { mutableStateOf(false) }
     var selectedSort by remember { mutableStateOf(0) }
     var selectedFilter by remember { mutableStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showAdvancedSearch by remember { mutableStateOf(false) }
+    var selectedDateRange by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+    var selectedVerificationStatus by remember { mutableStateOf<Boolean?>(null) }
+
+    // Update search when parameters change
+    LaunchedEffect(searchQuery, selectedDateRange, selectedVerificationStatus) {
+        viewModel.searchReports(
+            query = searchQuery,
+            dateRange = selectedDateRange,
+            verificationStatus = selectedVerificationStatus
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -64,13 +83,124 @@ fun ReportDataScreen(
                 onActionIconClick = { showFilterDialog = true }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Search Section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                // Main Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Tìm kiếm báo cáo...") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    trailingIcon = {
+                        Row {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { 
+                                    searchQuery = ""
+                                    viewModel.clearSearch()
+                                }) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "Clear search",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { showAdvancedSearch = !showAdvancedSearch }) {
+                                Icon(
+                                    if (showAdvancedSearch) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Advanced search",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                // Advanced Search Options
+                if (showAdvancedSearch) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            // Verification Status
+                            Text(
+                                text = "Trạng thái xác thực",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                FilterChip(
+                                    selected = selectedVerificationStatus == null,
+                                    onClick = { selectedVerificationStatus = null },
+                                    label = { Text("Tất cả") },
+                                    modifier = Modifier.weight(1f).padding(end = 4.dp)
+                                )
+                                FilterChip(
+                                    selected = selectedVerificationStatus == true,
+                                    onClick = { selectedVerificationStatus = true },
+                                    label = { Text("Đã xác thực") },
+                                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                                )
+                                FilterChip(
+                                    selected = selectedVerificationStatus == false,
+                                    onClick = { selectedVerificationStatus = false },
+                                    label = { Text("Chưa xác thực") },
+                                    modifier = Modifier.weight(1f).padding(start = 4.dp)
+                                )
+                            }
+
+                            // Clear Filters Button
+                            TextButton(
+                                onClick = {
+                                    selectedDateRange = null
+                                    selectedVerificationStatus = null
+                                    viewModel.clearSearch()
+                                },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text("Xóa bộ lọc")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Top Targets Section
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
@@ -147,7 +277,7 @@ fun ReportDataScreen(
                             type = type,
                             onSuccess = { },
                             onFailure = {
-                                Log.d( "ReportDataScreen", "Error filtering reports: $it")
+                                Log.d("ReportDataScreen", "Error filtering reports: $it")
                             }
                         )
                     }
@@ -436,4 +566,5 @@ private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }
+
 

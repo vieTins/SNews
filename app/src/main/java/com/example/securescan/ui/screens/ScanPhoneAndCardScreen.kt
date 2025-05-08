@@ -230,8 +230,8 @@ fun ScanPhoneAndCardScreen(
                                             } else {
                                                 viewModel.scanState.value = ScanState.Result(
                                                     isMalicious = false,
-                                                    message = "Số điện thoại không bị phát hiện là phần mềm độc hại.",
-                                                    details = "Không có dấu hiệu lừa đảo."
+                                                    message = "Số điện thoại không có dấu hiệu lừa đảo.",
+                                                    details = "Vẫn cẩn thận khi giao dịch và mua bán."
                                                 )
                                             }
                                         },

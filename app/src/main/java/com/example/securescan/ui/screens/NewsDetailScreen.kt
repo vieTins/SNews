@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Send
@@ -73,6 +75,18 @@ import com.example.securescan.viewmodel.UserViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.util.lerp
+import com.example.securescan.data.models.NewsItem
+import kotlinx.coroutines.delay
+import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,8 +105,7 @@ fun NewsDetailScreen(
     val comments by viewModel.currentComments.collectAsState()
     val viewModelUser: UserViewModel = viewModel()
     val user by viewModelUser.user
-
-
+    val allNews by viewModel.allNews.collectAsState()
 
     val timestampString = newsItem?.date
     val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
@@ -413,6 +426,7 @@ fun NewsDetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Comments Section
+                var isCommentsExpanded by remember { mutableStateOf(false) }
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -423,112 +437,155 @@ fun NewsDetailScreen(
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = "Bình luận ${newsItem!!.commentCount}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Comment Input
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFF5E7CE2).copy(alpha = 0.05f),
-                            border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isCommentsExpanded = !isCommentsExpanded },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Small Avatar
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFE0E0E0)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (user.profilePic != null) {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(user.profilePic)
-                                                .crossfade(true)
-                                                .transformations(CircleCropTransformation())
-                                                .build(),
-                                            contentDescription = "Image",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.matchParentSize()
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = "Error Icon",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                OutlinedTextField(
-                                    value = commentText,
-                                    onValueChange = { commentText = it },
-                                    placeholder = { Text("Viết bình luận...") },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(20.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color.Transparent,
-                                        unfocusedBorderColor = Color.Transparent
-                                    ),
-                                    trailingIcon = {
-                                        if (commentText.isNotBlank()) {
-                                            IconButton(
-                                                onClick = {
-                                                    viewModel.addComment(
-                                                        postId = newsItem!!.id,
-                                                        content = commentText
-                                                    ) { success ->
-                                                        if (success) {
-                                                            commentText = ""
-                                                        }
-                                                    }
-                                                }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Send,
-                                                    contentDescription = "Gửi bình luận",
-                                                    tint = Color(0xFF5E7CE2)
-                                                )
-                                            }
-                                        }
-                                    }
-                                )
-                            }
+                            Text(
+                                text = "Bình luận ${newsItem!!.commentCount}",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Icon(
+                                imageVector = if (isCommentsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isCommentsExpanded) "Thu gọn" else "Mở rộng",
+                                tint = Color(0xFF5E7CE2),
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        if (isCommentsExpanded) {
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        // Comments List
-                        comments.forEach { comment ->
-                            CommentItem(
-                                username = comment.userName,
-                                content = comment.content,
-                                time = getTimeAgo(comment.timestamp),
-                                likes = 0,
-                                profilePic = comment.profilePic
-                            )
-                            Divider(
-                                color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
-                                thickness = 1.dp,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
+                            // Comment Input
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xFF5E7CE2).copy(alpha = 0.05f),
+                                border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Small Avatar
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFE0E0E0)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (user.profilePic != null) {
+                                            AsyncImage(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(user.profilePic)
+                                                    .crossfade(true)
+                                                    .transformations(CircleCropTransformation())
+                                                    .build(),
+                                                contentDescription = "Image",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.matchParentSize()
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Person,
+                                                contentDescription = "Error Icon",
+                                                tint = Color.DarkGray,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    OutlinedTextField(
+                                        value = commentText,
+                                        onValueChange = { commentText = it },
+                                        placeholder = { Text("Viết bình luận...") },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color.Transparent,
+                                            unfocusedBorderColor = Color.Transparent
+                                        ),
+                                        trailingIcon = {
+                                            if (commentText.isNotBlank()) {
+                                                IconButton(
+                                                    onClick = {
+                                                        viewModel.addComment(
+                                                            postId = newsItem!!.id,
+                                                            content = commentText
+                                                        ) { success ->
+                                                            if (success) {
+                                                                commentText = ""
+                                                            }
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Send,
+                                                        contentDescription = "Gửi bình luận",
+                                                        tint = Color(0xFF5E7CE2)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Comments List
+                            comments.forEach { comment ->
+                                CommentItem(
+                                    username = comment.userName,
+                                    content = comment.content,
+                                    time = getTimeAgo(comment.timestamp),
+                                    likes = 0,
+                                    profilePic = comment.profilePic
+                                )
+                                Divider(
+                                    color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(5.dp))
+            // Related News Carousel
+            val relatedNews = remember(newsItem, allNews) {
+                if (newsItem != null) {
+                    allNews.filter {
+                        it.id != newsItem!!.id && it.tag == newsItem!!.tag
+                    }.take(5)
+                } else {
+                    emptyList()
+                }
+            }
+            Log.d("NewsDetailScreen", "Related news: $relatedNews")
+            Log.d("NewsDetailScreen", "All news:  ${viewModel.allNews}")
+
+            if (relatedNews.isNotEmpty()) {
+                RelativeCarousel(
+                    relatedNews = relatedNews,
+                    onNewsClick = { newsId ->
+                        navController.navigate("news_detail/$newsId")
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -671,4 +728,118 @@ private fun getTimeAgo(timestamp: Long): String {
         else -> "Vừa xong"
     }
 }
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun RelativeCarousel(
+    relatedNews: List<NewsItem>,
+    onNewsClick: (String) -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { relatedNews.size })
+
+    // Auto-scroll
+    LaunchedEffect(pagerState.currentPage) {
+        delay(3000L)
+        val next = (pagerState.currentPage + 1) % relatedNews.size
+        pagerState.animateScrollToPage(next)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    ) {
+        Text(
+            text = "Tin tức liên quan",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+        ) { page ->
+            val news = relatedNews[page]
+
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .clickable { onNewsClick(news.id) },
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(3.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                ) {
+                    AsyncImage(
+                        model = news.imageRes,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(width = 100.dp, height = 100.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(android.graphics.Color.parseColor(news.tagColor))
+                        ) {
+                            Text(
+                                text = news.tag.uppercase(),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = news.title,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${news.readTime} min read",
+                                fontSize = 11.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
