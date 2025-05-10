@@ -84,4 +84,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("org.json:json:20220320")
 
+    // ML Kit Translation
+    implementation("com.google.mlkit:translate:17.0.2")
+
+    // Jsoup for HTML parsing
+    implementation("org.jsoup:jsoup:1.17.2")
+
 }

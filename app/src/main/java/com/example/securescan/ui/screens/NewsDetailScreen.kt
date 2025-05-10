@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -87,6 +88,10 @@ import androidx.compose.ui.util.lerp
 import com.example.securescan.data.models.NewsItem
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
+import com.example.securescan.utils.TranslationManager
+import kotlinx.coroutines.launch
+import android.text.Html
+import android.text.Spanned
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,6 +111,13 @@ fun NewsDetailScreen(
     val viewModelUser: UserViewModel = viewModel()
     val user by viewModelUser.user
     val allNews by viewModel.allNews.collectAsState()
+    
+    // Translation states
+    var isTranslated by remember { mutableStateOf(false) }
+    var translatedContent by remember { mutableStateOf("") }
+    var isTranslating by remember { mutableStateOf(false) }
+    val translationManager = remember { TranslationManager() }
+    val coroutineScope = rememberCoroutineScope()
 
     val timestampString = newsItem?.date
     val timestamp = timestampString?.toLongOrNull() ?: 0L // Chuyển sang Long (nếu không thành công, mặc định 0L)
@@ -138,6 +150,74 @@ fun NewsDetailScreen(
                 // Cập nhật UI khi có thay đổi
             }
         }
+    }
+
+    fun getStyledHtmlContent(content: String): String {
+        return """
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body {
+                    font-size: 13px;
+                    line-height: 1.6;
+                    padding: 7px;
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                }
+                img {
+                    max-width: 100%;
+                    height: auto;
+                    display: block;
+                    margin: 10px auto;
+                }
+                p {
+                    margin: 8px 0;
+                    line-height: 1.6;
+                }
+                h1, h2, h3 {
+                    margin: 16px 0 8px 0;
+                    line-height: 1.4;
+                }
+                h1 { font-size: 24px; }
+                h2 { font-size: 20px; }
+                h3 { font-size: 18px; }
+                ul, ol {
+                    margin: 8px 0;
+                    padding-left: 20px;
+                }
+                li {
+                    margin: 4px 0;
+                }
+                blockquote {
+                    margin: 8px 0;
+                    padding: 8px 16px;
+                    border-left: 4px solid #5E7CE2;
+                    background-color: #f5f5f5;
+                }
+                a {
+                    color: #5E7CE2;
+                    text-decoration: none;
+                }
+                pre {
+                    background-color: #f5f5f5;
+                    padding: 8px;
+                    border-radius: 4px;
+                    overflow-x: auto;
+                }
+                code {
+                    font-family: monospace;
+                    background-color: #f5f5f5;
+                    padding: 2px 4px;
+                    border-radius: 4px;
+                }
+            </style>
+        </head>
+        <body>
+            ${content}
+        </body>
+        </html>
+        """
     }
 
     LazyColumn(
@@ -190,12 +270,18 @@ fun NewsDetailScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = newsItem!!.title,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DeepBlue
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = newsItem!!.title,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DeepBlue
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -224,6 +310,42 @@ fun NewsDetailScreen(
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = Icons.Default.Translate,
+                        contentDescription = "Translate",
+                        tint = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    if (isTranslating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF5E7CE2)
+                        )
+                    } else {
+                        Text(
+                            text = if (isTranslated) "English" else "Tiếng Việt",
+                            fontSize = 14.sp,
+                            color = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
+                            modifier = Modifier.clickable {
+                                coroutineScope.launch {
+                                    if (!isTranslated) {
+                                        isTranslating = true
+                                        try {
+                                            translatedContent = translationManager.translateText(newsItem!!.content)
+                                            Log.d("NewsDetailScreen", "Translated content: $translatedContent")
+                                            isTranslated = true
+                                        } finally {
+                                            isTranslating = false
+                                        }
+                                    } else {
+                                        isTranslated = false
+                                    }
+                                }
+                            }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -253,47 +375,23 @@ fun NewsDetailScreen(
                     WebView(context).apply {
                         settings.javaScriptEnabled = false
                         webViewClient = WebViewClient()
-                        val styledContent = """
-    <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body {
-                font-size: 13px;
-                line-height: 1.6;
-                padding: 7px;
-                margin: 0;
-            }
-            img {
-                max-width: 100%;
-                height: auto;
-                display: block;
-                margin: auto;
-            }
-            p {
-                margin: 4px 0; 
-                line-height: 1.5; 
-            }
-            h1 , h2 , h3{
-              margin: 4px 0; 
-              margin-bottom: 10px;
-              font-size: 24px;
-            }
-        </style>
-    </head>
-    <body>
-        ${newsItem!!.content}
-    </body>
-    </html>
-    """
                         loadDataWithBaseURL(
                             null,
-                            styledContent,
+                            getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content),
                             "text/html",
                             "UTF-8",
                             null
                         )
                     }
+                },
+                update = { webView ->
+                    webView.loadDataWithBaseURL(
+                        null,
+                        getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content),
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -418,7 +516,6 @@ fun NewsDetailScreen(
                                     fontSize = 14.sp
                                 )
                             }
-                            
                         }
                     }
                 }

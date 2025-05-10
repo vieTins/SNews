@@ -207,25 +207,40 @@ fun ReportDataScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(12.dp)
                 ) {
-                    Text(
-                        text = "Top Lừa Đảo",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Top Lừa Đảo",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        if (topTargets.isNotEmpty()) {
+                            Text(
+                                text = "Xem thêm",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable { /* TODO: Handle view more */ }
+                            )
+                        }
+                    }
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     if (topTargets.isEmpty()) {
                         Text(
                             text = "Chưa có dữ liệu",
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
-                        topTargets.forEachIndexed { index, (target, count) ->
+                        topTargets.take(3).forEachIndexed { index, (target, count) ->
                             TopTargetItem(
                                 rank = index + 1,
                                 target = target,
@@ -233,9 +248,9 @@ fun ReportDataScreen(
                                 dangerLevel = viewModel.getDangerLevelForCount(count),
                                 dangerColor = viewModel.getDangerLevelColorForCount(count)
                             )
-                            if (index < topTargets.size - 1) {
+                            if (index < topTargets.take(3).size - 1) {
                                 Divider(
-                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    modifier = Modifier.padding(vertical = 4.dp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
                                 )
                             }
@@ -501,13 +516,13 @@ private fun TopTargetItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Rank
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(20.dp)
                 .background(
                     color = when (rank) {
                         1 -> Color(0xFFFFD700) // Gold
@@ -522,12 +537,12 @@ private fun TopTargetItem(
             Text(
                 text = rank.toString(),
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             )
         }
         
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         
         // Target Info
         Column(
@@ -535,28 +550,30 @@ private fun TopTargetItem(
         ) {
             Text(
                 text = target,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "$count báo cáo",
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         
         // Danger Level
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             color = dangerColor.copy(alpha = 0.1f)
         ) {
             Text(
                 text = dangerLevel,
                 color = dangerColor,
-                fontSize = 12.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }
     }
