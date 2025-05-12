@@ -157,7 +157,7 @@ fun HomeScreen(navController: NavController) {
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 item { Spacer(modifier = Modifier.height(16.dp)) }
-                item { SecurityCarousel() }
+                item { SecurityCarousel(navController) }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
                 item {
                     FunctionsSection(
@@ -180,7 +180,7 @@ fun HomeScreen(navController: NavController) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SecurityCarousel() {
+fun SecurityCarousel(navController : NavController) {
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp)
     ) {
@@ -206,7 +206,7 @@ fun SecurityCarousel() {
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth()
             ) { page ->
-                SecurityCard(page)
+                SecurityCard(page = page, navController = navController)
             }
 
             // Indicator dots
@@ -238,7 +238,7 @@ fun SecurityCarousel() {
 }
 
 @Composable
-fun SecurityCard(page: Int) {
+fun SecurityCard(page: Int , navController: NavController) {
     val gradientColors = when (page) {
         0 -> listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
         1 -> listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.secondaryContainer)
@@ -256,6 +256,7 @@ fun SecurityCard(page: Int) {
         "BẢO VỆ DỮ LIỆU\nCÁ NHÂN",
         "CẢNH BÁO LỪA ĐẢO\nTRỰC TUYẾN"
     )
+
 
     Card(
         modifier = Modifier
@@ -294,7 +295,13 @@ fun SecurityCard(page: Int) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { },
+                        onClick = { 
+                            when (page) {
+                                0 -> navController.navigate("all_news")
+                                1 -> navController.navigate("scan")
+                                2 -> navController.navigate("report_data")
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceLight),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         shape = RoundedCornerShape(8.dp)
@@ -397,7 +404,7 @@ fun FunctionsSection(navController: NavController, onFunctionClick: (String) -> 
                 title = "Hướng dẫn",
                 gradientColors = listOf(FunctionTeal, FunctionTealDark),
                 modifier = Modifier.weight(1f),
-                onClick = { onFunctionClick("Bạn đã click vào Hướng dẫn") }
+                onClick = { navController.navigate("about_app/${AboutSection.FAQ}") }
             )
         }
     }
