@@ -43,6 +43,8 @@ import com.example.securescan.ui.screens.RegisterScreen
 import com.example.securescan.ui.screens.ReportDataScreen
 import com.example.securescan.ui.screens.ReportDetailScreen
 import com.example.securescan.ui.screens.ReportScreen
+import com.example.securescan.ui.screens.RssNewsDetailScreen
+import com.example.securescan.ui.screens.RssNewsScreen
 import com.example.securescan.ui.screens.ScanPhoneAndCardScreen
 import com.example.securescan.ui.screens.ScanScreen
 import com.example.securescan.ui.screens.SettingsScreen
@@ -52,6 +54,7 @@ import com.example.securescan.viewmodel.AuthViewModel
 import com.example.securescan.viewmodel.AuthViewModelFactory
 import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.ReportsViewModel
+import com.example.securescan.viewmodel.RssNewsViewModel
 import com.example.securescan.viewmodel.ScanPhoneCardViewModel
 import com.example.securescan.viewmodel.ScanViewModel
 import com.example.securescan.viewmodel.ThemeViewModel
@@ -64,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private val reportsViewModel: ReportsViewModel by viewModels()
     private val scanPhoneCardViewModel : ScanPhoneCardViewModel by viewModels()
     private val themeViewModel: ThemeViewModel by viewModels()
+    private val rssNewsViewModel: RssNewsViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -269,7 +273,21 @@ class MainActivity : ComponentActivity() {
                             composable("notification_settings") {
                                 NotificationSettingsScreen(navController = navController)
                             }
-
+                            composable("rss_news") {
+                                RssNewsScreen(
+                                    viewModel = rssNewsViewModel,
+                                    navController = navController
+                                )
+                            }
+                            composable("rss_news_detail") {
+                                val newsItem = rssNewsViewModel.selectedNews.value
+                                if (newsItem != null) {
+                                    RssNewsDetailScreen(
+                                        newsItem = newsItem,
+                                        navController = navController
+                                    )
+                                }
+                            }
                         }
                     }
                 }
