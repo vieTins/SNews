@@ -1,4 +1,4 @@
-package com.example.securescan.ui.screens
+    package com.example.securescan.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween

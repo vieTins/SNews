@@ -158,59 +158,59 @@ fun NewsDetailScreen(
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-                body {
-                    font-size: 13px;
-                    line-height: 1.6;
-                    padding: 7px;
-                    margin: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                }
-                img {
-                    max-width: 100%;
-                    height: auto;
-                    display: block;
-                    margin: 10px auto;
-                }
-                p {
-                    margin: 8px 0;
-                    line-height: 1.6;
-                }
-                h1, h2, h3 {
-                    margin: 16px 0 8px 0;
-                    line-height: 1.4;
-                }
-                h1 { font-size: 24px; }
-                h2 { font-size: 20px; }
-                h3 { font-size: 18px; }
-                ul, ol {
-                    margin: 8px 0;
-                    padding-left: 20px;
-                }
-                li {
-                    margin: 4px 0;
-                }
-                blockquote {
-                    margin: 8px 0;
-                    padding: 8px 16px;
-                    border-left: 4px solid #5E7CE2;
-                    background-color: #f5f5f5;
-                }
-                a {
-                    color: #5E7CE2;
-                    text-decoration: none;
-                }
-                pre {
-                    background-color: #f5f5f5;
-                    padding: 8px;
-                    border-radius: 4px;
-                    overflow-x: auto;
-                }
-                code {
-                    font-family: monospace;
-                    background-color: #f5f5f5;
-                    padding: 2px 4px;
-                    border-radius: 4px;
-                }
+            body {
+                font-size: 13px;
+                line-height: 1.6;
+                padding: 7px;
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 10px auto;
+            }
+            p {
+                margin: 4px 0; 
+                line-height: 1.4;
+            }
+            h1, h2, h3 {
+                margin: 16px 0 4px 0;
+                line-height: 1.4;
+            }
+            h1 { font-size: 24px; }
+            h2 { font-size: 20px; }
+            h3 { font-size: 18px; }
+            ul, ol {
+                margin: 4px 0; 
+                padding-left: 18px; 
+            }
+            li {
+                margin: 2px 0; 
+            }
+            blockquote {
+                margin: 8px 0;
+                padding: 8px 16px;
+                border-left: 4px solid #5E7CE2;
+                background-color: #f5f5f5;
+            }
+            a {
+                color: #5E7CE2;
+                text-decoration: none;
+            }
+            pre {
+                background-color: #f5f5f5;
+                padding: 8px;
+                border-radius: 4px;
+                overflow-x: auto;
+            }
+            code {
+                font-family: monospace;
+                background-color: #f5f5f5;
+                padding: 2px 4px;
+                border-radius: 4px;
+            }
             </style>
         </head>
         <body>

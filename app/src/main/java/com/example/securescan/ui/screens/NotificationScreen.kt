@@ -72,8 +72,8 @@ import com.example.securescan.viewmodel.NewsViewModel
 import com.example.securescan.viewmodel.NotificationViewModel
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
-
 
 @Composable
 fun NotificationScreen(
@@ -154,10 +154,12 @@ fun NotificationScreen(
                     NotificationItemCard(
                         notification = notification,
                         onNotificationClick = { notificationId ->
-                            viewModel.markAsRead(notificationId)
                             if (notification.newsId != null) {
+                                viewModel.markAsRead(notificationId)
                                 newsViewModel.incrementReadCount(notification.newsId)
                                 navController.navigate("news_detail/${notification.newsId}")
+                            } else {
+                                viewModel.markAsRead(notificationId)
                             }
                             snackBarMessage = "Đã mở thông báo: ${notification.title}"
                             showSnackBar = true
@@ -324,7 +326,7 @@ fun NotificationItemCard(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = formatNotificationTime(notification.time),
+                        text = formatTimestamp(notification.time),
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -490,14 +492,4 @@ fun EmptyNotifications(
     }
 }
 
-private fun formatNotificationTime(time: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("dd-MM, HH:mm", Locale.getDefault())
-        val date = inputFormat.parse(time)
-        date?.let { outputFormat.format(it) } ?: time
-    } catch (e: Exception) {
-        time
-    }
-}
 

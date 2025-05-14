@@ -82,10 +82,7 @@ fun NewsScreen(
         newsList
     } else {
         newsList.filter {
-            it.title.contains(searchQuery, ignoreCase = true) ||
-                    it.content.contains(searchQuery, ignoreCase = true) ||
-                    it.createBy.contains(searchQuery, ignoreCase = true) ||
-                    it.tag.contains(searchQuery , ignoreCase = true)
+            it.title.contains(searchQuery, ignoreCase = true)
         }
     }
 
