@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Check
@@ -53,8 +52,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -82,10 +79,10 @@ import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.securescan.data.models.User
 import com.example.securescan.ui.components.AppTopBar
+import com.example.securescan.ui.components.CustomSwitch
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.ThemeViewModel
 import com.example.securescan.viewmodel.UserViewModel
-import com.example.securescan.ui.components.CustomSwitch
 
 @Composable
 fun SettingsScreen(
@@ -107,9 +104,7 @@ fun SettingsScreen(
         ) {
             // Fixed AppTopBar
             AppTopBar(
-                title = "Cài đặt",
-                navigationIcon = Icons.Default.ArrowBackIosNew,
-                onNavigationClick = { navController.popBackStack() }
+                title = "Cài đặt"
             )
 
             // Scrollable content
