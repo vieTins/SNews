@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DataThresholding
 import androidx.compose.material.icons.filled.Info
@@ -40,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -184,6 +186,40 @@ fun HomeScreen(navController: NavController) {
                 }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
                 item { NewsSection(navController) }
+            }
+
+            // Featured News Button
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 8.dp)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .clickable { navController.navigate("rss_news") },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    tonalElevation = 4.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Tin nổi bật",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "Tin nổi bật",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
     }

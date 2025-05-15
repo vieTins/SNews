@@ -62,7 +62,9 @@ fun RssNewsScreen(
             AppTopBar(
                 title = "Tin tức bảo mật",
                 navigationIcon = Icons.Default.ArrowBackIosNew,
-                onNavigationClick = { navController.popBackStack() }
+                onNavigationClick = { 
+                    navController.navigateUp()
+                }
             )
         }
     ) { paddingValues ->

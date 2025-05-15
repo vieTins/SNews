@@ -4,6 +4,7 @@ import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,32 +20,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Comment
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +50,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -69,37 +68,28 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
+import com.example.securescan.data.models.NewsItem
+import com.example.securescan.ui.components.CommentDialog
 import com.example.securescan.ui.theme.DeepBlue
 import com.example.securescan.ui.theme.White
+import com.example.securescan.utils.TranslationManager
 import com.example.securescan.viewmodel.NewsViewModel
+import com.example.securescan.viewmodel.ThemeViewModel
 import com.example.securescan.viewmodel.UserViewModel
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.layout.offset
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.util.lerp
-import com.example.securescan.data.models.NewsItem
-import kotlinx.coroutines.delay
-import kotlin.math.absoluteValue
-import com.example.securescan.utils.TranslationManager
-import kotlinx.coroutines.launch
-import android.text.Html
-import android.text.Spanned
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsDetailScreen(
     newsId: String,
     viewModel: NewsViewModel,
     onBackPressed: () -> Unit = {},
     navController: NavController,
+    themeViewModel: ThemeViewModel = viewModel()
 ) {
     val newsItem by viewModel.getNewsById(newsId).collectAsState(initial = null)
     val userLikes by viewModel.userLikes.collectAsState()
@@ -111,7 +101,20 @@ fun NewsDetailScreen(
     val viewModelUser: UserViewModel = viewModel()
     val user by viewModelUser.user
     val allNews by viewModel.allNews.collectAsState()
+    var isCommentsExpanded by remember { mutableStateOf(false) }
+    var showCommentDialog by remember { mutableStateOf(false) }
+
+    // Get the current theme state
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     
+    // Get colors from theme
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val onBackgroundColor = MaterialTheme.colorScheme.onBackground
+
     // Translation states
     var isTranslated by remember { mutableStateOf(false) }
     var translatedContent by remember { mutableStateOf("") }
@@ -152,7 +155,15 @@ fun NewsDetailScreen(
         }
     }
 
-    fun getStyledHtmlContent(content: String): String {
+    fun getStyledHtmlContent(content: String, isDarkModel: Boolean): String {
+
+        val backgroundColor = if (isDarkMode) "#121212" else "#FFFFFF"
+        val textColor = if (isDarkMode) "#E0E0E0" else "#000000"
+        val linkColor = if (isDarkMode) "#90CAF9" else "#5E7CE2"
+        val codeBackgroundColor = if (isDarkMode) "#1E1E1E" else "#f5f5f5"
+        val quoteBackgroundColor = if (isDarkMode) "#252525" else "#f5f5f5"
+        val borderColor = if (isDarkMode) "#444444" else "#E0E0E0"
+
         return """
         <html>
         <head>
@@ -164,6 +175,8 @@ fun NewsDetailScreen(
                     padding: 7px;
                     margin: 0;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    background-color: ${backgroundColor};
+                    color: ${textColor};
                 }
                 img {
                     max-width: 100%;
@@ -178,6 +191,7 @@ fun NewsDetailScreen(
                 h1, h2, h3 {
                     margin: 16px 0 8px 0;
                     line-height: 1.4;
+                    color: ${textColor};
                 }
                 h1 { font-size: 24px; }
                 h2 { font-size: 20px; }
@@ -193,23 +207,36 @@ fun NewsDetailScreen(
                     margin: 8px 0;
                     padding: 8px 16px;
                     border-left: 4px solid #5E7CE2;
-                    background-color: #f5f5f5;
+                    background-color: ${quoteBackgroundColor};
                 }
                 a {
-                    color: #5E7CE2;
+                    color: ${linkColor};
                     text-decoration: none;
                 }
                 pre {
-                    background-color: #f5f5f5;
+                    background-color: ${codeBackgroundColor};
                     padding: 8px;
                     border-radius: 4px;
                     overflow-x: auto;
                 }
                 code {
                     font-family: monospace;
-                    background-color: #f5f5f5;
+                    background-color: ${codeBackgroundColor};
                     padding: 2px 4px;
                     border-radius: 4px;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 16px 0;
+                }
+                th, td {
+                    border: 1px solid ${borderColor};
+                    padding: 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: ${codeBackgroundColor};
                 }
             </style>
         </head>
@@ -220,148 +247,323 @@ fun NewsDetailScreen(
         """
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        item {
-            Box {
-                AsyncImage(
-                    model = newsItem!!.imageRes,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp),
-                    contentScale = ContentScale.Crop
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+        ) {
+            item {
+                Box {
+                    AsyncImage(
+                        model = newsItem!!.imageRes,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        contentScale = ContentScale.Crop
+                    )
 
-                IconButton(
-                    onClick = onBackPressed,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .background(
-                            color = Color.White.copy(alpha = 0.7f),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.Black
-                    )
-                }
-            }
-        }
-
-        item {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(android.graphics.Color.parseColor(newsItem!!.tagColor))
-                ) {
-                    Text(
-                        text = newsItem!!.tag.uppercase(),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = newsItem!!.title,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DeepBlue
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Author",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "By ${newsItem!!.createBy}",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = "Read Time",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "${newsItem!!.readTime} min read",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Default.Translate,
-                        contentDescription = "Translate",
-                        tint = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    if (isTranslating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = Color(0xFF5E7CE2)
-                        )
-                    } else {
-                        Text(
-                            text = if (isTranslated) "English" else "Tiếng Việt",
-                            fontSize = 14.sp,
-                            color = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
-                            modifier = Modifier.clickable {
-                                coroutineScope.launch {
-                                    if (!isTranslated) {
-                                        isTranslating = true
-                                        try {
-                                            translatedContent = translationManager.translateText(newsItem!!.content)
-                                            Log.d("NewsDetailScreen", "Translated content: $translatedContent")
-                                            isTranslated = true
-                                        } finally {
-                                            isTranslating = false
-                                        }
-                                    } else {
-                                        isTranslated = false
-                                    }
-                                }
-                            }
+                    IconButton(
+                        onClick = onBackPressed,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .background(
+                                color = Color.White.copy(alpha = 0.7f),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.Black
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(4.dp))
+            item {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(android.graphics.Color.parseColor(newsItem!!.tagColor))
+                    ) {
+                        Text(
+                            text = newsItem!!.tag.uppercase(),
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = "Date",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = formattedDate,
-                        fontSize = 13.sp,
-                        color = Color.Gray
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = newsItem!!.title,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DeepBlue
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Author",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "By ${newsItem!!.createBy}",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Read Time",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "${newsItem!!.readTime} min read",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Icon(
+                            imageVector = Icons.Default.Translate,
+                            contentDescription = "Translate",
+                            tint = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        if (isTranslating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFF5E7CE2)
+                            )
+                        } else {
+                            Text(
+                                text = if (isTranslated) "English" else "Tiếng Việt",
+                                fontSize = 14.sp,
+                                color = if (isTranslated) Color(0xFF5E7CE2) else Color.Gray,
+                                modifier = Modifier.clickable {
+                                    coroutineScope.launch {
+                                        if (!isTranslated) {
+                                            isTranslating = true
+                                            try {
+                                                translatedContent = translationManager.translateText(newsItem!!.content)
+                                                Log.d("NewsDetailScreen", "Translated content: $translatedContent")
+                                                isTranslated = true
+                                            } finally {
+                                                isTranslating = false
+                                            }
+                                        } else {
+                                            isTranslated = false
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Date",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = formattedDate,
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            item {
+                AndroidView(
+                    factory = { context ->
+                        WebView(context).apply {
+                            settings.javaScriptEnabled = false
+                            webViewClient = WebViewClient()
+                            loadDataWithBaseURL(
+                                null,
+                                getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content, isDarkMode),
+                                "text/html",
+                                "UTF-8",
+                                null
+                            )
+                        }
+                    },
+                    update = { webView ->
+                        webView.loadDataWithBaseURL(
+                            null,
+                            getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content, isDarkMode),
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
+            }
+
+            // Interaction Section
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
+                ) {
+                    // Interaction Buttons Container
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = surfaceColor,
+                        shadowElevation = 4.dp,
+                        border = BorderStroke(1.dp, secondaryColor.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            // Interaction Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Like Button
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clickable {
+                                            viewModel.toggleLike(newsId)
+                                        }
+                                        .padding(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ThumbUp,
+                                        contentDescription = "Like",
+                                        tint = if (isLiked) secondaryColor else onSurfaceColor.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "${newsItem!!.likeCount}",
+                                        color = if (isLiked) secondaryColor else onSurfaceColor.copy(alpha = 0.6f),
+                                        fontSize = 14.sp
+                                    )
+                                }
+
+                                // Comment Button
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clickable { showCommentDialog = true }
+                                        .padding(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Comment,
+                                        contentDescription = "Comment",
+                                        tint = secondaryColor,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "${newsItem!!.commentCount}",
+                                        color = secondaryColor,
+                                        fontSize = 14.sp
+                                    )
+                                }
+
+                                // Share Button
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clickable {
+                                            viewModel.sharePost(newsItem!!.id) { success -> }
+                                        }
+                                        .padding(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = "Share",
+                                        tint = secondaryColor,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Share",
+                                        color = secondaryColor,
+                                        fontSize = 14.sp
+                                    )
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .clickable {
+                                            viewModel.toggleBookmark(newsId)
+                                        }
+                                        .padding(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                        contentDescription = "Bookmark",
+                                        tint = if (isBookmarked) secondaryColor else onSurfaceColor.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isBookmarked) "Đã lưu" else "Lưu",
+                                        color = if (isBookmarked) secondaryColor else onSurfaceColor.copy(alpha = 0.6f),
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(5.dp))
+                // Related News Carousel
+                val relatedNews = remember(newsItem, allNews) {
+                    if (newsItem != null) {
+                        allNews.filter {
+                            it.id != newsItem!!.id && it.tag == newsItem!!.tag
+                        }.take(5)
+                    } else {
+                        emptyList()
+                    }
+                }
+                Log.d("NewsDetailScreen", "Related news: $relatedNews")
+                Log.d("NewsDetailScreen", "All news:  ${viewModel.allNews}")
+
+                if (relatedNews.isNotEmpty()) {
+                    RelativeCarousel(
+                        relatedNews = relatedNews,
+                        onNewsClick = { newsId ->
+                            navController.navigate("news_detail/$newsId")
+                        }
                     )
                 }
 
@@ -369,320 +571,19 @@ fun NewsDetailScreen(
             }
         }
 
-        item {
-            AndroidView(
-                factory = { context ->
-                    WebView(context).apply {
-                        settings.javaScriptEnabled = false
-                        webViewClient = WebViewClient()
-                        loadDataWithBaseURL(
-                            null,
-                            getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content),
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
-                    }
+        // Move CommentDialog outside of LazyColumn
+        if (showCommentDialog) {
+            CommentDialog(
+                comments = comments,
+                currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                onSend = { content ->
+                    viewModel.addComment(
+                        postId = newsItem!!.id,
+                        content = content
+                    ) { }
                 },
-                update = { webView ->
-                    webView.loadDataWithBaseURL(
-                        null,
-                        getStyledHtmlContent(if (isTranslated) translatedContent else newsItem!!.content),
-                        "text/html",
-                        "UTF-8",
-                        null
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
+                onDismiss = { showCommentDialog = false }
             )
-        }
-
-        // Interaction Section
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
-            ) {
-                // Interaction Buttons Container
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 4.dp,
-                    border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        // Interaction Buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            // Like Button
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable {
-                                        Log.d("NewsDetailScreen", "Like button clicked for post $newsId")
-                                        viewModel.toggleLike(newsId)
-                                    }
-                                    .padding(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ThumbUp,
-                                    contentDescription = "Like",
-                                    tint = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${newsItem!!.likeCount}",
-                                    color = if (isLiked) Color(0xFF5E7CE2) else Color.Gray,
-                                    fontSize = 14.sp
-                                )
-                            }
-
-                            // Comment Button
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable {
-
-                                    }
-                                    .padding(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Comment,
-                                    contentDescription = "Comment",
-                                    tint = Color(0xFF5E7CE2),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "${newsItem!!.commentCount}",
-                                    color = Color(0xFF5E7CE2),
-                                    fontSize = 14.sp
-                                )
-                            }
-
-                            // Share Button
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable {
-                                        viewModel.sharePost(newsItem!!.id) { success ->
-                                            if (success) {
-
-                                            }
-                                        }
-                                    }
-                                    .padding(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Share",
-                                    tint = Color(0xFF5E7CE2),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Share",
-                                    color = Color(0xFF5E7CE2),
-                                    fontSize = 14.sp
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clickable {
-                                        viewModel.toggleBookmark(newsId)
-                                    }
-                                    .padding(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                                    contentDescription = "Bookmark",
-                                    tint = if (isBookmarked) Color(0xFF5E7CE2) else Color.Gray,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (isBookmarked) "Đã lưu" else "Lưu",
-                                    color = if (isBookmarked) Color(0xFF5E7CE2) else Color.Gray,
-                                    fontSize = 14.sp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Comments Section
-                var isCommentsExpanded by remember { mutableStateOf(false) }
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 4.dp,
-                    border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isCommentsExpanded = !isCommentsExpanded },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Bình luận ${newsItem!!.commentCount}",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
-                            Icon(
-                                imageVector = if (isCommentsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isCommentsExpanded) "Thu gọn" else "Mở rộng",
-                                tint = Color(0xFF5E7CE2),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        if (isCommentsExpanded) {
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Comment Input
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFF5E7CE2).copy(alpha = 0.05f),
-                                border = BorderStroke(1.dp, Color(0xFF5E7CE2).copy(alpha = 0.2f))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Small Avatar
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFFE0E0E0)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (user.profilePic != null) {
-                                            AsyncImage(
-                                                model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(user.profilePic)
-                                                    .crossfade(true)
-                                                    .transformations(CircleCropTransformation())
-                                                    .build(),
-                                                contentDescription = "Image",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.matchParentSize()
-                                            )
-                                        } else {
-                                            Icon(
-                                                imageVector = Icons.Default.Person,
-                                                contentDescription = "Error Icon",
-                                                tint = Color.DarkGray,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    OutlinedTextField(
-                                        value = commentText,
-                                        onValueChange = { commentText = it },
-                                        placeholder = { Text("Viết bình luận...") },
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(20.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Color.Transparent,
-                                            unfocusedBorderColor = Color.Transparent
-                                        ),
-                                        trailingIcon = {
-                                            if (commentText.isNotBlank()) {
-                                                IconButton(
-                                                    onClick = {
-                                                        viewModel.addComment(
-                                                            postId = newsItem!!.id,
-                                                            content = commentText
-                                                        ) { success ->
-                                                            if (success) {
-                                                                commentText = ""
-                                                            }
-                                                        }
-                                                    }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Send,
-                                                        contentDescription = "Gửi bình luận",
-                                                        tint = Color(0xFF5E7CE2)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Comments List
-                            comments.forEach { comment ->
-                                CommentItem(
-                                    username = comment.userName,
-                                    content = comment.content,
-                                    time = getTimeAgo(comment.timestamp),
-                                    likes = 0,
-                                    profilePic = comment.profilePic
-                                )
-                                Divider(
-                                    color = Color(0xFF5E7CE2).copy(alpha = 0.1f),
-                                    thickness = 1.dp,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(5.dp))
-            // Related News Carousel
-            val relatedNews = remember(newsItem, allNews) {
-                if (newsItem != null) {
-                    allNews.filter {
-                        it.id != newsItem!!.id && it.tag == newsItem!!.tag
-                    }.take(5)
-                } else {
-                    emptyList()
-                }
-            }
-            Log.d("NewsDetailScreen", "Related news: $relatedNews")
-            Log.d("NewsDetailScreen", "All news:  ${viewModel.allNews}")
-
-            if (relatedNews.isNotEmpty()) {
-                RelativeCarousel(
-                    relatedNews = relatedNews,
-                    onNewsClick = { newsId ->
-                        navController.navigate("news_detail/$newsId")
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -850,7 +751,7 @@ fun RelativeCarousel(
             text = "Tin tức liên quan",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
 
@@ -909,7 +810,7 @@ fun RelativeCarousel(
                             text = news.title,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
