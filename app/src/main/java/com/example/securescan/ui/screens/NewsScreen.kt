@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Search
-
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-
 import androidx.compose.ui.graphics.Color
-
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,11 +58,10 @@ import com.example.securescan.ui.components.FeaturedNewsCard
 import com.example.securescan.ui.components.NewsCard
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.NewsViewModel
-
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.delay
 
 @Composable
 fun NewsScreen(
@@ -225,7 +221,7 @@ fun NewsTopAppBar(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    cursorColor = MaterialTheme.colorScheme.primary,
+                    cursorColor = baseBlue3,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),

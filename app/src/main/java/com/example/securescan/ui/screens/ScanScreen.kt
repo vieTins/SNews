@@ -8,8 +8,21 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,9 +30,35 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,14 +79,16 @@ import com.example.securescan.R
 import com.example.securescan.data.models.ScanHistory
 import com.example.securescan.data.models.ScanResult
 import com.example.securescan.ui.components.AppTopBar
-import com.example.securescan.ui.theme.*
+import com.example.securescan.ui.theme.DeepBlue
+import com.example.securescan.ui.theme.ErrorRed
+import com.example.securescan.ui.theme.White
+import com.example.securescan.utils.ValidationUtils
 import com.example.securescan.viewmodel.ScanViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.regex.Pattern
 
 @Composable
 fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
@@ -75,14 +116,6 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
     var showHistory by remember { mutableStateOf(false) }
     var scanResultText by remember { mutableStateOf("") }
     var inputError by remember { mutableStateOf<String?>(null) }
-
-    // Validation patterns
-    val urlPattern = Pattern.compile(
-        "^(https?://)?([\\w-]+\\.)+[\\w-]+(/[\\w-./?%&=]*)?$"
-    )
-    val ipPattern = Pattern.compile(
-        "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-    )
 
     // File picker launcher
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -255,7 +288,9 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                 url = it
                                 scanComplete = false
                                 scanResult = null
-                                inputError = null
+                                inputError = if (!ValidationUtils.isValidUrl(it) && !ValidationUtils.isValidIpAddress(it) && it.isNotEmpty()) {
+                                    "URL/Domain/IP không hợp lệ"
+                                } else null
                             },
                             placeholder = { Text("URL, domain, IP address...") },
                             keyboardOptions = KeyboardOptions(
@@ -334,6 +369,8 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                             onClick = {
                                                 filePath = ""
                                                 selectedFileName = ""
+                                                scanComplete = false
+                                                scanResult = null
                                             }
                                         ) {
                                             Icon(
@@ -384,10 +421,11 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                             // Result overlay
                             Card(
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (scanResult == true) 
-                                        ErrorRed.copy(alpha = 0.1f) 
-                                    else 
-                                        Color(0xFF81C784).copy(alpha = 0.1f)
+                                    containerColor = when (scanResult) {
+                                        true -> ErrorRed.copy(alpha = 0.1f)
+                                        false -> Color(0xFF81C784).copy(alpha = 0.1f)
+                                        null -> Color(0xFFFFA726).copy(alpha = 0.1f)
+                                    }
                                 ),
                                 elevation = CardDefaults.cardElevation(6.dp),
                                 shape = RoundedCornerShape(8.dp),
@@ -404,30 +442,53 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
-                                            imageVector = if (scanResult == true) 
-                                                Icons.Default.Warning 
-                                            else 
-                                                Icons.Default.Check,
+                                            imageVector = when (scanResult) {
+                                                true -> Icons.Default.Warning
+                                                false -> Icons.Default.Check
+                                                null -> Icons.Default.Warning
+                                            },
                                             contentDescription = "Result Icon",
-                                            tint = if (scanResult == true) 
-                                                ErrorRed 
-                                            else 
-                                                Color(0xFF81C784),
+                                            tint = when (scanResult) {
+                                                true -> ErrorRed
+                                                false -> Color(0xFF81C784)
+                                                null -> Color(0xFFFFA726)
+                                            },
                                             modifier = Modifier.size(24.dp)
                                         )
 
                                         Spacer(modifier = Modifier.width(12.dp))
 
                                         Text(
-                                            text = if (scanResult == true) 
-                                                "LỪA ĐẢO - KHÔNG NÊN TRUY CẬP"
-                                            else 
-                                                "CHƯA CÓ THÔNG TIN",
-                                            color = if (scanResult == true) 
-                                                ErrorRed 
-                                            else 
-                                                Color(0xFF81C784),
+                                            text = when (scanResult) {
+                                                true -> "LỪA ĐẢO - KHÔNG NÊN TRUY CẬP"
+                                                false -> "CHƯA CÓ THÔNG TIN"
+                                                null -> "NGHI NGỜ - CẦN THẬN TRỌNG"
+                                            },
+                                            color = when (scanResult) {
+                                                true -> ErrorRed
+                                                false -> Color(0xFF81C784)
+                                                null -> Color(0xFFFFA726)
+                                            },
                                             fontWeight = FontWeight.Bold
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            scanComplete = false
+                                            scanResult = null
+                                            if (selectedScanType == "URL") {
+                                                url = ""
+                                            } else {
+                                                filePath = ""
+                                                selectedFileName = ""
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "Clear Result",
+                                            tint = DeepBlue
                                         )
                                     }
                                 }
@@ -449,7 +510,7 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                             return@Button
                                         }
                                         
-                                        if (!urlPattern.matcher(url).matches() && !ipPattern.matcher(url).matches()) {
+                                        if (!ValidationUtils.isValidUrl(url) && !ValidationUtils.isValidIpAddress(url)) {
                                             inputError = "URL/Domain/IP không hợp lệ"
                                             return@Button
                                         }
@@ -465,7 +526,7 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                                 val match = maliciousRegex.find(result)
                                                 val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
                                                 val isMalicious = maliciousCount > 0
-                                                scanResult = isMalicious
+                                                scanResult = if (maliciousCount > 0) true else if (maliciousCount == 0) false else null
                                                 
                                                 // Refresh scan history after successful scan
                                                 viewModel.loadScanHistory(currentUser.uid)
@@ -491,6 +552,11 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                             inputError = "File quá lớn (giới hạn 32MB)"
                                             return@Button
                                         }
+
+                                        if (!ValidationUtils.isValidFileName(file.name)) {
+                                            inputError = "Tên file không hợp lệ"
+                                            return@Button
+                                        }
                                         
                                         isScanning = true
                                         currentScanTarget = selectedFileName.ifEmpty { filePath }
@@ -503,7 +569,7 @@ fun ScanScreen(viewModel: ScanViewModel, navController: NavController) {
                                                 val match = maliciousRegex.find(result)
                                                 val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
                                                 val isMalicious = maliciousCount > 0
-                                                scanResult = isMalicious
+                                                scanResult = if (maliciousCount > 0) true else if (maliciousCount == 0) false else null
                                                 
                                                 // Refresh scan history after successful scan
                                                 viewModel.loadScanHistory(currentUser.uid)

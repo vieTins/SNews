@@ -132,7 +132,7 @@ fun AllNewsScreen(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                             disabledContainerColor = MaterialTheme.colorScheme.surface,
-                            cursorColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = baseBlue3,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent
                         ),

@@ -47,175 +47,188 @@ fun LoginScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8F8F8))
-            .padding(24.dp)
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFFF8F8F8)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(24.dp)
         ) {
-            // Header
-            Text(
-                text = "Đăng Nhập",
-                color = Color(0xFF2D4EC1),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Subtitle
-            Text(
-                text = "Chào mừng bạn trở lại!",
-                fontSize = 16.sp,
-                color = Color.Black,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-
-            // Email field
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = { Text("Email") },
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFF2D4EC1),
-                    focusedBorderColor = Color(0xFF2D4EC1),
-                    unfocusedContainerColor = Color.White
+                    .align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Text(
+                    text = "Đăng Nhập",
+                    color = Color(0xFF2D4EC1),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-            )
 
-            // Password field
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = { Text("Mật khẩu") },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            painter = painterResource(
-                                id = if (showPassword) R.drawable.ic_visibility else R.drawable.ic_visibility_off
-                            ),
-                            contentDescription = if (showPassword) "Hide password" else "Show password"
+                // Subtitle
+                Text(
+                    text = "Chào mừng bạn trở lại!",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 32.dp)
+                )
+
+                // Email field
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = { Text("Email", color = Color.Gray) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color(0xFF2D4EC1),
+                        focusedBorderColor = Color(0xFF2D4EC1),
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        cursorColor = Color(0xFF2D4EC1),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+
+                // Password field
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = { Text("Mật khẩu", color = Color.Gray) },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                painter = painterResource(
+                                    id = if (showPassword) R.drawable.ic_visibility else R.drawable.ic_visibility_off
+                                ),
+                                contentDescription = if (showPassword) "Hide password" else "Show password",
+                                tint = Color(0xFF2D4EC1)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color(0xFF2D4EC1),
+                        focusedBorderColor = Color(0xFF2D4EC1),
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        cursorColor = Color(0xFF2D4EC1),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
+                )
+
+                // Forgot password
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    TextButton(
+                        onClick = onForgotPasswordClick,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Text(
+                            text = "Bạn quên mật khẩu?",
+                            color = Color(0xFF2D4EC1),
+                            fontSize = 14.sp
                         )
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFEEEEEE),
-                    focusedBorderColor = Color(0xFF2D4EC1),
-                    unfocusedContainerColor = Color(0xFFF0F4F7)
-                )
-            )
+                }
 
-            // Forgot password
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TextButton(
-                    onClick = onForgotPasswordClick,
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                // Sign in button
+                Button(
+                    onClick = {
+                        viewModel.login(email.trim(), password.trim())
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2D4EC1)
+                    )
                 ) {
                     Text(
-                        text = "Bạn quên mật khẩu?",
-                        color = Color(0xFF2D4EC1),
+                        text = "Đăng nhập",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Error message
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                // Create account
+                TextButton(
+                    onClick = onCreateAccountClick,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "Tạo tài khoản mới",
+                        color = Color.Gray,
                         fontSize = 14.sp
                     )
                 }
-            }
 
-            // Sign in button
-            Button(
-                onClick = {
-                    viewModel.login(email.trim(), password.trim())
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2D4EC1)
-                )
-            ) {
-                Text(
-                    text = "Đăng nhập",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+                // Social login section
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Error message
-            errorMessage?.let {
                 Text(
-                    text = it,
-                    color = Color.Red,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            // Create account
-            TextButton(
-                onClick = onCreateAccountClick,
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
-                Text(
-                    text = "Tạo tài khoản mới",
+                    text = "Hoặc đăng nhập bằng",
                     color = Color.Gray,
-                    fontSize = 14.sp
-                )
-            }
-
-            // Social login section
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Hoặc đăng nhập bằng",
-                color = Color.Gray,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-
-            // Social login buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Google
-                SocialLoginButton(
-                    onClick = onGoogleSignInClick,
-                    iconResId = R.drawable.ic_google,
-                    contentDescription = "Đăng nhập bằng Google"
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(vertical = 16.dp)
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                // Social login buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Google
+                    SocialLoginButton(
+                        onClick = onGoogleSignInClick,
+                        iconResId = R.drawable.ic_google,
+                        contentDescription = "Đăng nhập bằng Google"
+                    )
 
-                // Facebook
-                SocialLoginButton(
-                    onClick = onFacebookSignInClick,
-                    iconResId = R.drawable.ic_facebook,
-                    contentDescription = "Đăng nhập bằng Facebook"
-                )
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                Spacer(modifier = Modifier.width(16.dp))
+                    // Facebook
+                    SocialLoginButton(
+                        onClick = onFacebookSignInClick,
+                        iconResId = R.drawable.ic_facebook,
+                        contentDescription = "Đăng nhập bằng Facebook"
+                    )
 
-                // Apple
-                SocialLoginButton(
-                    onClick = onAppleSignInClick,
-                    iconResId = R.drawable.ic_apple,
-                    contentDescription = "Đăng nhập bằng Apple"
-                )
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Apple
+                    SocialLoginButton(
+                        onClick = onAppleSignInClick,
+                        iconResId = R.drawable.ic_apple,
+                        contentDescription = "Đăng nhập bằng Apple"
+                    )
+                }
             }
         }
     }

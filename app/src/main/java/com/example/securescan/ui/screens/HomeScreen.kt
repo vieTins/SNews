@@ -199,7 +199,7 @@ fun HomeScreen(navController: NavController) {
                         .padding(vertical = 8.dp)
                         .clickable { navController.navigate("rss_news") },
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = baseBlue3,
                     tonalElevation = 4.dp
                 ) {
                     Column(

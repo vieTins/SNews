@@ -1,5 +1,6 @@
 package com.example.securescan.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.securescan.data.models.ScanHistory
@@ -66,12 +67,12 @@ class ScanViewModel : ViewModel() {
 
                     onResult("File uploaded successfully. Scanning in progress...")
                     val scanResult = waitForScanResult(analysisId)
-                    
+
                     // Parse malicious count from result
                     val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
                     val match = maliciousRegex.find(scanResult)
                     val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
-                    
+
                     // Save scan history
                     val scanHistory = ScanHistory(
                         userId = userId,
@@ -80,10 +81,10 @@ class ScanViewModel : ViewModel() {
                         result = scanRepository.determineScanResult(ScanType.FILE, maliciousCount)
                     )
                     scanRepository.saveScanHistory(scanHistory)
-                    
+
                     // Reload scan history after saving
                     loadScanHistory(userId)
-                    
+
                     onResult(scanResult)
                 } else {
                     val errorCode = response.code()
@@ -104,7 +105,7 @@ class ScanViewModel : ViewModel() {
 
             try {
                 val response = apiService.scanUrl(apiKey, normalizedUrl)
-
+                Log.d("ScanViewModel", "Response: $response")
                 if (response.isSuccessful && response.body() != null) {
                     val analysisId = response.body()?.data?.id ?: ""
                     if (analysisId.isEmpty()) {
@@ -113,12 +114,12 @@ class ScanViewModel : ViewModel() {
                     }
 
                     val scanResult = waitForScanResult(analysisId)
-                    
+
                     // Parse malicious count from result
                     val maliciousRegex = Regex("Malicious:\\s*(\\d+)", RegexOption.IGNORE_CASE)
                     val match = maliciousRegex.find(scanResult)
                     val maliciousCount = match?.groups?.get(1)?.value?.toIntOrNull() ?: 0
-                    
+
                     // Save scan history
                     val scanHistory = ScanHistory(
                         userId = userId,
@@ -127,10 +128,10 @@ class ScanViewModel : ViewModel() {
                         result = scanRepository.determineScanResult(ScanType.WEBSITE, maliciousCount)
                     )
                     scanRepository.saveScanHistory(scanHistory)
-                    
+
                     // Reload scan history after saving
                     loadScanHistory(userId)
-                    
+
                     onResult(scanResult)
                 } else {
                     val errorCode = response.code()
@@ -172,7 +173,8 @@ class ScanViewModel : ViewModel() {
     private suspend fun waitForScanResult(analysisId: String): String {
         val maxAttempts = 15
         val delayBetweenAttemptsMs = 5000L
-        val totalTimeout = 120000L // 2 phút timeout
+        val totalTimeout = 120000L // 2 minutes timeout
+        var lastProgress = 0
 
         return withTimeoutOrNull(totalTimeout) {
             var attempts = 0
@@ -189,68 +191,77 @@ class ScanViewModel : ViewModel() {
                         val status = attributes?.status ?: "unknown"
                         lastStatus = status
 
-                        // Chờ đến khi scan hoàn tất
-                        if (status != "completed") {
-                            delay(delayBetweenAttemptsMs)
-                            continue
-                        }
-
                         val engineResults = attributes?.results
                         val stats = attributes?.stats
                         val totalEngines = engineResults?.size ?: 0
                         val scannedEngines = engineResults?.count { it.value.result != null } ?: 0
 
-                        // Chờ cho đến khi ít nhất 90% engine đã scan
-                        if (totalEngines > 0 && scannedEngines >= totalEngines * 0.9) {
-                            val maliciousEngines = engineResults?.filter { it.value.category == "malicious" }
-                            val suspiciousEngines = engineResults?.filter { it.value.category == "suspicious" }
+                        // Calculate progress percentage
+                        val progress = if (totalEngines > 0) {
+                            ((scannedEngines.toFloat() / totalEngines) * 100).toInt()
+                        } else 0
 
-                            val result = buildString {
-                                append("Scan completed.\n\n")
-                                append("Stats:\n")
-                                append(" - Malicious: ${stats?.malicious}\n")
-                                append(" - Suspicious: ${stats?.suspicious}\n")
-                                append(" - Harmless: ${stats?.harmless}\n")
-                                append(" - Undetected: ${stats?.undetected}\n")
-                                append(" - Timeout: ${stats?.timeout}\n")
-                                append(" - Total engines: $totalEngines\n")
-                                append(" - Scanned engines: $scannedEngines\n\n")
+                        // Only show progress if it has changed
+                        if (progress != lastProgress) {
+                            lastProgress = progress
+                            Log.d("ScanViewModel", "Scan progress: $progress%")
+                        }
 
-                                if (maliciousEngines != null) {
-                                    if (maliciousEngines.isNotEmpty()) {
-                                        append("Detected by malicious engines:\n")
+                        when (status) {
+                            "completed" -> {
+                                // If status is completed, we should return results regardless of engine count
+                                val maliciousEngines = engineResults?.filter { it.value.category == "malicious" }
+                                val suspiciousEngines = engineResults?.filter { it.value.category == "suspicious" }
+
+                                return@withTimeoutOrNull buildString {
+                                    append("Scan completed successfully.\n\n")
+                                    append("Scan Statistics:\n")
+                                    append(" - Malicious: ${stats?.malicious}\n")
+                                    append(" - Suspicious: ${stats?.suspicious}\n")
+                                    append(" - Harmless: ${stats?.harmless}\n")
+                                    append(" - Undetected: ${stats?.undetected}\n")
+                                    append(" - Timeout: ${stats?.timeout}\n")
+                                    append(" - Total engines: $totalEngines\n")
+                                    append(" - Scanned engines: $scannedEngines\n\n")
+
+                                    if (maliciousEngines != null && maliciousEngines.isNotEmpty()) {
+                                        append("⚠️ Malicious Detections:\n")
                                         maliciousEngines.forEach {
                                             append(" - ${it.key}: ${it.value.result}\n")
                                         }
                                     } else {
-                                        append("No malicious engines detected this file/URL.\n")
+                                        append("✅ No malicious engines detected.\n")
                                     }
-                                }
 
-                                if (suspiciousEngines != null) {
-                                    if (suspiciousEngines.isNotEmpty()) {
-                                        append("\nSuspicious detections:\n")
+                                    if (suspiciousEngines != null && suspiciousEngines.isNotEmpty()) {
+                                        append("\n⚠️ Suspicious Detections:\n")
                                         suspiciousEngines.forEach {
                                             append(" - ${it.key}: ${it.value.result}\n")
                                         }
                                     }
                                 }
                             }
+                            "queued" -> Log.d("ScanViewModel", "Scan is queued...")
+                            "in_progress" -> Log.d("ScanViewModel", "Scan in progress...")
+                            else -> Log.d("ScanViewModel", "Unknown status: $status")
+                        }
 
-                            return@withTimeoutOrNull result
-                        } else {
+                        if (status != "completed") {
                             delay(delayBetweenAttemptsMs)
                             continue
                         }
                     } else {
+                        val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                        Log.e("ScanViewModel", "API Error: ${response.code()} - $errorBody")
                         delay(delayBetweenAttemptsMs)
                     }
                 } catch (e: Exception) {
+                    Log.e("ScanViewModel", "Error during scan: ${e.message}", e)
                     delay(delayBetweenAttemptsMs)
                 }
             }
 
-            return@withTimeoutOrNull "Scan did not complete in $maxAttempts attempts. Last status: $lastStatus"
-        } ?: "Scan timed out after waiting ${totalTimeout / 1000} seconds."
+            "Scan did not complete after $maxAttempts attempts. Last status: $lastStatus"
+        } ?: "Scan timed out after ${totalTimeout / 1000} seconds. Please try again."
     }
 }

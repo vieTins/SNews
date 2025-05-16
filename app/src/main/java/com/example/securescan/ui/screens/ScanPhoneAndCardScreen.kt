@@ -70,6 +70,7 @@ import com.example.securescan.ui.theme.DeepBlue
 import com.example.securescan.ui.theme.ErrorRed
 import com.example.securescan.ui.theme.LightBlue
 import com.example.securescan.ui.theme.White
+import com.example.securescan.utils.ValidationUtils
 import com.example.securescan.viewmodel.ScanPhoneCardViewModel
 import kotlinx.coroutines.launch
 
@@ -270,6 +271,7 @@ fun PhoneNumberScanForm(
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     var isPhoneValid by remember { mutableStateOf(true) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -297,7 +299,10 @@ fun PhoneNumberScanForm(
             value = phoneNumber,
             onValueChange = {
                 phoneNumber = it
-                isPhoneValid = it.isEmpty() || it.length >= 10
+                isPhoneValid = ValidationUtils.isValidPhoneNumber(it)
+                phoneError = if (!isPhoneValid && it.isNotEmpty()) {
+                    "Số điện thoại không hợp lệ"
+                } else null
             },
             label = { Text("Số điện thoại") },
             leadingIcon = {
@@ -313,23 +318,21 @@ fun PhoneNumberScanForm(
                 focusedBorderColor = if (isPhoneValid) LightBlue else ErrorRed
             ),
             isError = !isPhoneValid,
+            supportingText = {
+                if (phoneError != null) {
+                    Text(
+                        text = phoneError!!,
+                        color = ErrorRed,
+                        fontSize = 12.sp
+                    )
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Phone,
                 imeAction = ImeAction.Done
             ),
             singleLine = true
         )
-
-        if (!isPhoneValid) {
-            Text(
-                text = "Làm ơn nhập một số điện thoại hợp lệ",
-                color = ErrorRed,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(start = 16.dp, top = 4.dp)
-            )
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -339,6 +342,7 @@ fun PhoneNumberScanForm(
                     onSubmit(phoneNumber)
                 } else {
                     isPhoneValid = false
+                    phoneError = "Vui lòng nhập số điện thoại hợp lệ"
                 }
             },
             modifier = Modifier
@@ -385,6 +389,7 @@ fun CardNumberScanForm(
 ) {
     var cardNumber by remember { mutableStateOf("") }
     var isCardValid by remember { mutableStateOf(true) }
+    var cardError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -412,7 +417,10 @@ fun CardNumberScanForm(
             value = cardNumber,
             onValueChange = {
                 cardNumber = it
-                isCardValid = it.isEmpty() || it.length >= 16
+                isCardValid = ValidationUtils.isValidCardNumber(it)
+                cardError = if (!isCardValid && it.isNotEmpty()) {
+                    "Số thẻ không hợp lệ"
+                } else null
             },
             label = { Text("Số tài khoản") },
             leadingIcon = {
@@ -428,23 +436,21 @@ fun CardNumberScanForm(
                 focusedBorderColor = if (isCardValid) LightBlue else ErrorRed
             ),
             isError = !isCardValid,
+            supportingText = {
+                if (cardError != null) {
+                    Text(
+                        text = cardError!!,
+                        color = ErrorRed,
+                        fontSize = 12.sp
+                    )
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             singleLine = true
         )
-
-        if (!isCardValid) {
-            Text(
-                text = "Làm ơn nhập một số tài khoản hợp lệ",
-                color = ErrorRed,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(start = 16.dp, top = 4.dp)
-            )
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -454,6 +460,7 @@ fun CardNumberScanForm(
                     onSubmit(cardNumber)
                 } else {
                     isCardValid = false
+                    cardError = "Vui lòng nhập số thẻ hợp lệ"
                 }
             },
             modifier = Modifier

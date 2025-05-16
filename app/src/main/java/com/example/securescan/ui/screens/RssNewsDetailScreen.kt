@@ -190,7 +190,7 @@ fun RssNewsDetailScreen(
                     Text(
                         text = "Đọc thêm tại nguồn",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                 }
 

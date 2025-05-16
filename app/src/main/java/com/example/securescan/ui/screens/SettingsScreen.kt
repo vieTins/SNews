@@ -392,7 +392,7 @@ fun ExpandableSettingsCategory(
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = if (expanded) "Collapse" else "Expand",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = baseBlue3,
                         modifier = Modifier
                             .size(24.dp)
                             .rotate(rotationState)

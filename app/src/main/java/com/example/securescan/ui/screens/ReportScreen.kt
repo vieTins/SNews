@@ -62,6 +62,7 @@ import com.example.securescan.ui.components.AppTopBar
 import com.example.securescan.ui.theme.baseBlue3
 import com.example.securescan.viewmodel.ReportsViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.example.securescan.utils.ValidationUtils
 
 @Composable
 fun ReportScreen(
@@ -568,18 +569,9 @@ fun ReportTypeButton(
 
 fun validateInput(input: String, type: String): Boolean {
     return when (type) {
-        "url" -> {
-            val urlPattern = "^(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})([/\\w .-]*)*/?$"
-            input.matches(urlPattern.toRegex())
-        }
-        "phone" -> {
-            val phonePattern = "^(0|\\+84)([35789])\\d{8}$"
-            input.matches(phonePattern.toRegex())
-        }
-        "card" -> {
-            val cardPattern = "^\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4}$"
-            input.matches(cardPattern.toRegex())
-        }
+        "url" -> ValidationUtils.isValidUrl(input)
+        "phone" -> ValidationUtils.isValidPhoneNumber(input)
+        "card" -> ValidationUtils.isValidCardNumber(input)
         else -> false
     }
 }
